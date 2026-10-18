@@ -1,5 +1,5 @@
 """Independent local Git + build/test verifier for K-TOOL Command Center.
-Run from a trusted supervisor Windows account with filesystem ACL isolation.
+Run with trusted supervisor policy; a shared Windows user is not OS isolation.
 NOT a Revit runtime test and NOT a secure boundary when the worker shares OS privileges.
 """
 from __future__ import annotations
@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 from registry import Registry, clean_scope
+from ci_scope_gate import verify
 
 
 def execute(argv, cwd: Path, timeout: int = 180, output_limit=10000):
@@ -33,8 +34,8 @@ def assess(db_path:Path, tid:str, repo:Path, profile:Path):
     if not res or not selfqa:raise ValueError('source + self QA missing')
     profile_bytes=profile.read_bytes()
     config=json.loads(profile_bytes.decode('utf-8'))
-    if set(config) != {'build','tests'}:
-        raise ValueError('QA profile needs build/tests argv arrays only')
+    if not {'build','tests'} <= set(config) or set(config) - {'build','tests','allowed_paths','protected_paths'}:
+        raise ValueError('QA profile needs build/tests and optional allowed_paths/protected_paths')
     repo=repo.resolve(strict=True)
     git_root=execute(['git','rev-parse','--show-toplevel'],repo)
     root=Path(git_root['stdout'].strip()).resolve() if git_root['exit']==0 else None
@@ -44,18 +45,15 @@ def assess(db_path:Path, tid:str, repo:Path, profile:Path):
     expected=res['commit_sha'].lower()
     base=execute(['git','cat-file','-e',t['base_sha']+'^{commit}'],repo)
     ancestor=execute(['git','merge-base','--is-ancestor',t['base_sha'],expected],repo)
-    diff=execute(['git','diff','--name-only','--no-renames','-z',t['base_sha'],expected],repo,output_limit=None) if base['exit']==0 else {'exit':None,'stdout':''}
+    boundary=verify(repo,t['base_sha'],expected,t['scope'],config.get('allowed_paths'),config.get('protected_paths'))
     clean=execute(['git','status','--porcelain','--untracked-files=all'],repo)
-    changed=[x for x in diff.get('stdout','').split('\0') if x]
-    normalized=[]
-    try: normalized=[clean_scope(x) for x in changed]
-    except ValueError: normalized=[]
-    path_check=bool(changed) and len(normalized)==len(changed) and all(
-        x==t['scope'] or x.startswith(t['scope']+'/') for x in normalized)
+    changed=boundary['changed_paths']
+    normalized=changed
+    path_check=boundary['pass']
     claimed=sorted(selfqa.get('changed_paths',[]))
     path_check=path_check and sorted(normalized)==claimed
     tree_clean=clean['exit']==0 and clean['stdout'].strip()==''
-    identity_ok=sha==expected and base['exit']==0 and ancestor['exit']==0 and diff['exit']==0 and current['exit']==0
+    identity_ok=sha==expected and base['exit']==0 and ancestor['exit']==0 and boundary['pass'] and current['exit']==0
     # Fail closed: NEVER execute build/test on a mismatching or out-of-scope commit.
     if tree_clean and identity_ok and path_check:
         build=execute(config['build'],repo,300)
@@ -68,17 +66,21 @@ def assess(db_path:Path, tid:str, repo:Path, profile:Path):
     identity_ok=identity_ok and final_head['exit']==0 and final_head['stdout'].strip().lower()==expected
     tree_clean=tree_clean and final_clean['exit']==0 and final_clean['stdout'].strip()==''
     payload={'task_id':tid,'commit_sha':sha,'expected_sha':expected,'base_sha':t['base_sha'],
-             'git_root':str(repo),'diff':changed,'git_verified':identity_ok,'path_check':path_check,
+             'scope_gate':boundary,'quarantine':not path_check,'git_root':str(repo),'diff':changed,'git_verified':identity_ok,'path_check':path_check,
              'tree_clean':tree_clean,'postflight_head':final_head,'postflight_status':final_clean,
              'baseline_ancestor':ancestor['exit']==0,'profile_sha256':hashlib.sha256(profile_bytes).hexdigest(),
              'build':build,'tests':tests, 'revit_host':'NOT_EXECUTED', 'agent_sessions':'NOT_VERIFIED'}
     stored=store.register_local_qa(tid,t['qa_round'],expected,identity_ok and path_check,tree_clean,
                                    normalized,build['exit'],tests['exit'],payload)
+    if not path_check:
+        reasons=boundary['errors'] or ['CLAIMED_PATHS_MISMATCH']
+        store.freeze('CODEX',tid,('QA_SCOPE_QUARANTINE: '+ '; '.join(reasons))[:500])
+        stored['quarantine']='FROZEN'
     return stored
 
 
 def main():
-    ap=argparse.ArgumentParser(description='Trusted independent QA: run from supervisor Windows profile only.')
+    ap=argparse.ArgumentParser(description='Trusted independent QA: supervisor-supplied policy and immutable Git commits.')
     ap.add_argument('--db',default=str(Path(__file__).with_name('private')/'registry.db'))
     ap.add_argument('--task',required=True)
     ap.add_argument('--repo',required=True)

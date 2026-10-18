@@ -1,0 +1,28 @@
+name: Trusted source scope gate
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - name: Preserve trusted checker and base policy
+        run: |
+          mkdir "$RUNNER_TEMP/trusted-gate"
+          cp ci_scope_gate.py registry.py "$RUNNER_TEMP/trusted-gate/"
+          test -f .github/scope-policy.json
+          cp .github/scope-policy.json "$RUNNER_TEMP/trusted-gate/policy.json"
+      - name: Fetch submission without executing worker code
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git fetch origin "$HEAD_SHA"
+      - name: Verify immutable diff using trusted base policy
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python "$RUNNER_TEMP/trusted-gate/ci_scope_gate.py" --repo "$GITHUB_WORKSPACE" --base "$BASE_SHA" --commit "$HEAD_SHA" --policy "$RUNNER_TEMP/trusted-gate/policy.json"
