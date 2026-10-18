@@ -18,7 +18,7 @@
     {
       "id": "QA-02",
       "name": "Security",
-      "status": "BLOCKED",
+    "status": "BLOCKED",
       "scope": "Full master acceptance; local execution result separate",
       "local_execution": "PASS",
       "reason": "Six-role adversarial tests pass locally; protected external principal absent.",
@@ -155,7 +155,25 @@
     "negative_run": 39133453324,
     "negative_conclusion": "failure",
     "negative_expected_rejection": true,
-    "protection": "PENDING_GITHUB_SUDO_VERIFICATION",
+    "protection": {
+      "status": "PASS",
+      "ruleset_id": 25346465,
+      "enforcement": "active",
+      "target": "refs/heads/integration/command-center-qa",
+      "bypass_actors": [],
+      "required": [
+        "pull request",
+        "1 approving review",
+        "dismiss stale approvals",
+        "approval of most recent push",
+        "Trusted base scope policy (GitHub Actions app)",
+        "up-to-date branch"
+      ],
+      "blocked": ["force push", "deletion"],
+      "evidence": ["ruleset-active.png", "pr1-merge-blocked-dom.txt", "direct-push-attempt.txt"]
+    },
+    "direct_push_probe": {"candidate_sha":"485896c49428862c70c8a4814f2680aeaae82362","status":"REJECTED_GH013","target_unchanged":true},
+    "pr1_merge_gate": "BLOCKED_REVIEW_REQUIRED",
     "merged": false
   },
   "not_executed": [

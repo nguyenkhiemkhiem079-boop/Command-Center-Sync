@@ -5,7 +5,7 @@ Ngày18/10/2026. **Chưa nghiệm thu End-to-End toàn hệ thống.** Source ha
 ## Kết quả chính
 
 - Full regression Windows: **196 tests /173.942s/OK**. Đây là independent local Codex execution trong cùng OS principal, không phải production-trusted CI. Các focused QA01–08 khác mục tiêu đều có logs tại `evidence-full-fix/passes-verified`, source8a3b275. Candidate552197b bổ sung ba test backup/supervisor đã thực thi và có trong full regression.
-- Hosted CI pilot thật: [PR1](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/1) SUCCESS, [PR2](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/2) FAILURE đúng kỳ vọng do OUT_OF_SCOPE/PROTECTED_PATH, exit2. Target bootstrap4380084 được duyệt, không production. Protection Save đang đợi GitHub Confirm access; không ghi protected khi API vẫn false.
+- Hosted CI pilot thật: [PR1](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/1) SUCCESS, [PR2](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/2) FAILURE đúng kỳ vọng do OUT_OF_SCOPE/PROTECTED_PATH, exit2. Ruleset ID25346465 ACTIVE, bypass list rỗng, yêu cầu PR, 1 review, stale review dismissal, approval sau lần push cuối, check `Trusted base scope policy` và up-to-date; block force push/deletion. PR1 có check pass nhưng GitHub disabled merge vì thiếu approval. Direct push probe bị GH013 từ chối vì check chưa có và phải qua PR. Không merge.
 - Live `http://127.0.0.1:8876/ui` vẫn sourcec377d10, hai khóa PILOT-ANTI01/02 FROZEN và credentials/worktrees giữ nguyên. Candidate staging8878 dùng fixture riêng, actual MCP45 tools và authenticated browser checks đạt. Không diễn giải fixture thành Anti thật.
 - Crosswalk56: **9 IMPLEMENTED_AND_VERIFIED trong phạm vi local /42 PARTIAL /5 BLOCKED**. Việc một mục không còn MISSING không có nghĩa đạt toàn bộ contract. Xem từng giới hạn tại MASTER_FEATURE_CROSSWALK.md.
 
@@ -33,7 +33,7 @@ Rollback after a future approved update: stop only verified coordinator process;
 
 ## Cổng còn thiếu và bước mở khóa
 
-1. Chủ dự án nhập mã trực tiếp tại tab GitHub Confirm access và Verify; Codex lưu/đọc lại exact approved protection, giữ hai PR không merge. Approval đã có, chỉ thiếu platform authentication.
+1. GitHub protection đã xác minh active trên đúng nhánh; direct push bị chặn và PR merge thiếu approval bị disabled. PR pilot vẫn mở, chưa merge.
 2. Protected independent verifier/owner principal thực sự: phê duyệt thiết kế/entrypoint pin protected workflow source, candidate SHA, test profile/suite and artifacts. Scope check alone không chứng nhận full QA. Same-Windows-user files/hashes không bảo đảm worker không giả bằng chứng. Production acceptance vẫn disabled.
 3. Operator mở hai Antigravity sessions bằng cơ chế được hỗ trợ, cung cấp IDs không bí mật; kiểm chứng time overlap, roles/worktrees, permitted ACK/source edits/self-QA/checkpoints/Codex feedback. Giữ `BLOCKED_TWO_ACCOUNT_TEAMWORK` tới khi có chứng cứ; không kết luận impossible.
 4. Candidate staging review và approval riêng trước upgrade8876. Native sessions, real subprocess subagents, Windows restart, pilot2 repo/branch, Revit2025 host và long-running mission chưa thực thi/duyệt. Không reboot máy có Revit đang mở. Không production merge/release nếu chưa có approval cụ thể.

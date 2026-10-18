@@ -9,11 +9,13 @@ Chủ dự án duyệt nhánh và CI pilot trong cuộc trò chuyện. Không c�
 - [PR #1](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/1), candidate `77aae61b147b15a40c7d852d4f6b903c4071afc5`: [run 39133452978](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39133452978), job `117693123378`, actual conclusion SUCCESS.
 - [PR #2](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/2), candidate `509a021c643d04b4489be60a2609e80d017a7147`: [run 39133453324](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39133453324), job `117693124567`, actual conclusion FAILURE, exit 2. Logs ghi `OUT_OF_SCOPE` và `PROTECTED_PATH: tests/ci_scope_violation_probe.txt`. Negative test đạt kỳ vọng; run không được gọi PASS.
 
-## Protection
+## Protection đã xác minh
 
-Đã điền đúng tên nhánh, PR bắt buộc, 1 approval, dismiss stale, approval lần push cuối, required check `Trusted base scope policy` từ GitHub Actions, up-to-date, no bypass. Force push/deletion không được bật. Khi Save, GitHub yêu cầu Confirm access (sudo mode). Tại thời điểm ghi báo cáo, đang chờ chủ dự án nhập mã trực tiếp trên GitHub; public API vẫn cho `protected:false`. Không ghi protection PASS khi chưa lưu.
+Ruleset ID `25346465`, enforcement `active`, target đúng `refs/heads/integration/command-center-qa`, bypass list rỗng. Bắt buộc PR, 1 review, dismiss stale approvals, approval lần push cuối, check `Trusted base scope policy` từ GitHub Actions app, branch up-to-date; block force push và deletion. Classic rule cũng đặt PR/review/required-check; giao diện xác nhận rule này được ruleset bao phủ. PR #1 hiện có 1/1 check pass nhưng merge vẫn disabled vì thiếu review; message nêu cần approval khác người push. Không có merge.
 
-Evidence ngoài Git: `evidence-full-fix/ci-pilot-branch.json`, `ci-run-39133452978.json`, `ci-run-39133453324.json`, `ci-negative-dom.txt`, `ci-negative.png`, `github-confirm-access.png`.
+Direct-push probe commit `485896c49428862c70c8a4814f2680aeaae82362` bị GitHub từ chối (exit1, GH013): required status check chưa có cho SHA và changes must be made through PR. Probe không cập nhật protected ref. Bằng chứng raw trong `evidence-full-fix/direct-push-attempt.txt`.
+
+Evidence ngoài Git: `evidence-full-fix/ci-pilot-branch.json`, `ci-run-39133452978.json`, `ci-run-39133453324.json`, `ci-negative-dom.txt`, `ci-negative.png`, `direct-push-attempt.txt`, GitHub UI ruleset/PR merge-status observation.
 
 ## Giới hạn tin cậy
 
