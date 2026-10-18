@@ -11,3 +11,5 @@ Delta đầu W1.10: sáu Human Request types, timezone-aware deadline, additive 
 Lịch19:55 được cập nhật thành kiểm tra/tiếp tục từ source mới nhất, không rerun setup hoặc duplicate assignments. Các slice tiếp theo theo dependency architecture; những approval quan trọng vẫn chờ owner. Không PR vì remote chưa có protected base branch được xác lập.
 
 Source delta đã commit và push: 7f6629f647c9007e582382271134afc535a750af. 155 local tests chạy trên cùng nội dung code trước commit; binding sau run là local evidence, không protected execution attestation. Nhánh feature/master-scope-v1-governance; chưa merge/deploy.
+
+Cập nhật deployment: owner đã phê duyệt và bản c377d10 đã chạy ở localhost8876. Xem DEPLOYMENT_ACCEPTANCE_VI.md và deployment-live-validation.json cho evidence. Các phát biểu “chưa deploy” trước đây mô tả thời điểm báo cáo ban đầu; deployment không làm full Master Scope hoàn tất.

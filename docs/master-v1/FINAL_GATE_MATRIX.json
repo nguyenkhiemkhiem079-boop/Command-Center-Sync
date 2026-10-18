@@ -143,5 +143,11 @@
     "production_provenance": "NOT_ESTABLISHED",
     "code_sha": "7f6629f647c9007e582382271134afc535a750af",
     "binding": "POST_RUN_LOCAL_CONTENT_BINDING_NOT_TRUSTED_ATTESTATION"
+  },
+  "deployment": {
+    "status": "PASS_LOCAL_INSTALLATION",
+    "installed_sha": "c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d",
+    "evidence": "deployment-live-validation.json",
+    "full_master_acceptance": false
   }
 }
