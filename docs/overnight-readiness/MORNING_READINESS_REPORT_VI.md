@@ -5,7 +5,7 @@
 ## Phạm vi và hiện trạng
 
 - Cài đặt đang chạy: `C:\KTOOL\CommandCenter\MCP`; Dashboard `http://127.0.0.1:8876/ui`.
-- HEAD nhánh phát triển của repo này: `4ebd891c5f6ff3011d935039484104a363138852` (`feature/full-fix-e2e-acceptance`). Giá trị trong `DEPLOYMENT.json` là `c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d`, nhưng đó là khai báo triển khai; thư mục cài không phải Git checkout nên chưa chứng minh được HEAD thực tế của bản cài.
+- HEAD nhánh phát triển sau khi xuất bản readiness artifacts: `fa2aeb3c6edb830220cbf56c79fef04fcb339981` (`feature/full-fix-e2e-acceptance`). Source code được đối soát/kiểm thử trước các commit tài liệu-only ở `4ebd891c5f6ff3011d935039484104a363138852`; không có thay đổi code giữa hai SHA đó. Giá trị trong `DEPLOYMENT.json` là `c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d`, nhưng đó là khai báo triển khai; thư mục cài không phải Git checkout nên chưa chứng minh được HEAD thực tế của bản cài.
 - Listener duy nhất tại `127.0.0.1:8876` thuộc PID `23652`, chạy Python hệ thống 3.12.10; PID cha `44844` chạy Python trong venv. Hai tiến trình cùng lệnh server và ngày bắt đầu; hiện chỉ một listener. Không dừng hay khởi động lại dịch vụ.
 - `/health`, `/ui`, JavaScript UI: HTTP 200. Registry SQLite `integrity_check=ok`; `user_version=0` và không có migration-version table rõ ràng. `pip check` sạch, còn khoảng 315.5 GB trống; bộ nhớ trống hệ thống khoảng 4.8 GB. Sleep khi cắm nguồn: không ngủ; dùng pin: 10 phút. Không đổi thiết lập nguồn.
 - Task cũ `PILOT-ANTI01` và `PILOT-ANTI02` vẫn `FROZEN`, không có lock hoạt động. `UI-SMOKE` đang `QUEUED`, không owner. Probe RBAC tạo thêm `OVERNIGHT-RBAC-CODEX`, `QUEUED`, không owner/lock; không xóa trực tiếp DB. Chi tiết ở [MCP_CONNECTION_MATRIX.json](MCP_CONNECTION_MATRIX.json).
