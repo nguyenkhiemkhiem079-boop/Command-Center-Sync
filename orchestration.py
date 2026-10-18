@@ -57,6 +57,7 @@ class ControlStore:
             CREATE TABLE IF NOT EXISTS cc_events(id INTEGER PRIMARY KEY AUTOINCREMENT,at TEXT NOT NULL,actor TEXT NOT NULL,kind TEXT NOT NULL,target TEXT,body TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS cc_deliveries(id TEXT PRIMARY KEY,assignment TEXT NOT NULL,owner TEXT NOT NULL,epoch INTEGER NOT NULL,payload TEXT NOT NULL,payload_hash TEXT NOT NULL,status TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,ack_deadline TEXT NOT NULL,created TEXT NOT NULL,acknowledged TEXT,UNIQUE(assignment,epoch));
             CREATE TABLE IF NOT EXISTS cc_supervisor_summaries(mission TEXT PRIMARY KEY,body TEXT NOT NULL,updated TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS cc_worktrees(path TEXT PRIMARY KEY,owner TEXT NOT NULL,branch TEXT NOT NULL,common_dir TEXT NOT NULL,created TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS cc_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
             INSERT OR IGNORE INTO cc_meta VALUES('mode','NORMAL');
             INSERT OR IGNORE INTO cc_meta VALUES('epoch','0');
@@ -225,6 +226,11 @@ class ControlStore:
                 db.execute("UPDATE cc_locks SET state='DELEGATED' WHERE assignment=?",(parent,))
             db.execute('INSERT INTO cc_waves(id,mission,parent,state,revision,created) VALUES(?,?,?,?,?,?)',(wave,mission,parent,'WAITING',m['revision'],stamp()))
             for t in prepared:
+                from worktree_manager import inspect as inspect_worktree
+                worktree=inspect_worktree(t['repo'],t['base_sha'])
+                bound=db.execute('SELECT * FROM cc_worktrees WHERE path=?',(worktree['path'],)).fetchone()
+                if bound and (bound['owner']!=t['owner'] or bound['branch']!=worktree['branch'] or bound['common_dir']!=worktree['common_dir']):raise Denied('CANT_EDIT_WORKTREE_OWNER')
+                db.execute('INSERT OR IGNORE INTO cc_worktrees VALUES(?,?,?,?,?)',(worktree['path'],t['owner'],worktree['branch'],worktree['common_dir'],stamp()))
                 existing=db.execute('SELECT * FROM cc_teams WHERE id=?',(t['team'],)).fetchone()
                 if existing and (existing['owner']!=t['owner'] or existing['mission']!=mission): raise Denied('TEAM_OWNER_MISMATCH')
                 db.execute('INSERT OR IGNORE INTO cc_teams VALUES(?,?,?)',(t['team'],mission,t['owner']))
@@ -283,7 +289,9 @@ class ControlStore:
                 if not set(json.loads(t['capabilities']))<=set(agent): pending.append({'id':t['id'],'reason':'CAPABILITY_UNAVAILABLE'});continue
                 deps=json.loads(t['dependencies'])
                 if any(self.row(db,'cc_assignments',d)['status']!='INTEGRATED' for d in deps): pending.append({'id':t['id'],'reason':'DEPENDENCY_PENDING'});continue
-                try: epoch=self.acquire(db,t)
+                try:
+                    self._verify_worktree(db,t)
+                    epoch=self.acquire(db,t)
                 except Denied as exc: pending.append({'id':t['id'],'reason':str(exc)});continue
                 db.execute("UPDATE cc_assignments SET status='TASK_ASSIGNED',epoch=?,attempt=attempt+1,updated=? WHERE id=?",(epoch,stamp(),t['id']))
                 current=self.row(db,'cc_assignments',t['id'])
@@ -291,6 +299,14 @@ class ControlStore:
                 result.append({'id':t['id'],'owner':t['owner'],'epoch':epoch,'delivery_id':delivery})
                 self.event(db,actor,'TASK_ASSIGNED',t['id'],result[-1])
         return {'assigned':result,'pending':pending}
+
+    def _verify_worktree(self,db,t,candidate=None):
+        from worktree_manager import inspect as inspect_worktree
+        observed=inspect_worktree(t['repo'],t['base_sha'],candidate)
+        bound=db.execute('SELECT * FROM cc_worktrees WHERE path=?',(observed['path'],)).fetchone()
+        if bound is None or bound['owner']!=t['owner'] or bound['branch']!=observed['branch'] or bound['common_dir']!=observed['common_dir']:
+            raise Denied('WORKTREE_OWNERSHIP_REVALIDATION_REQUIRED')
+        return observed
 
     def get_assignment(self,actor,assignment):
         with self.connection() as db:
@@ -401,6 +417,7 @@ class ControlStore:
         modified=[]
         p=subprocess.run(['git','-C',repo,'diff','--name-only','--no-renames','-z',t['base_sha'],commit],capture_output=True,check=True)
         modified=[clean_scope(s.decode()) for s in p.stdout.split(b'\0') if s]
+        with self.connection() as db:self._verify_worktree(db,t,commit)
         allowed=json.loads(t['allowed']);forbidden=json.loads(t['forbidden'])+json.loads(t['readonly'])
         ancestry=subprocess.run(['git','-C',repo,'merge-base','--is-ancestor',t['base_sha'],commit],capture_output=True)
         if ancestry.returncode or not modified or sorted(modified)!=sorted(clean_scope(p) for p in changed_paths): raise Denied('CHECKPOINT_DIFF_MISMATCH')
