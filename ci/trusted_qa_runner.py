@@ -170,7 +170,7 @@ def validate_candidate(
     if (not isinstance(profile.get("ownership_epoch"), int) or profile["ownership_epoch"] < 1 or
             not isinstance(profile.get("acceptance_criteria"), list) or not profile["acceptance_criteria"]):
         raise VerificationError("TRUSTED_PROFILE_BINDINGS_INVALID")
-    if profile["dependency_files"] != ["requirements.txt", "constraints-windows-py312.txt"]:
+    if profile["dependency_files"] != ["requirements-windows-py312-hashed.txt"]:
         raise VerificationError("DEPENDENCY_FILE_SET_NOT_APPROVED")
     if not isinstance(profile.get("test_files"), list) or len(profile["test_files"]) != len(set(profile["test_files"])):
         raise VerificationError("TRUSTED_TEST_LIST_INVALID")
@@ -383,9 +383,9 @@ def run_profile(
                 report_file = Path(temporary) / "pip-install-report.json"
                 install_argv = [
                     str(python_for_tests), "-m", "pip", "install", "--disable-pip-version-check", "--no-input",
-                    "--only-binary=:all:", "--report", str(report_file),
-                    "--requirement", str(trusted_workflow / "requirements.txt"),
-                    "--constraint", str(trusted_workflow / "constraints-windows-py312.txt"),
+                    "--only-binary=:all:", "--require-hashes", "--no-deps", "--no-cache-dir", "--force-reinstall",
+                    "--index-url", "https://pypi.org/simple", "--report", str(report_file),
+                    "--requirement", str(trusted_workflow / "requirements-windows-py312-hashed.txt"),
                 ]
                 install_exit, elapsed, _ = _run_command(install_argv, trusted_base, profile["timeouts_seconds"]["dependency_install"], log_file)
                 commands.append({"phase": "DEPENDENCIES", "argv": install_argv, "exit": install_exit, "elapsed": elapsed})

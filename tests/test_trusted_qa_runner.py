@@ -17,7 +17,8 @@ from ci.trusted_qa_runner import (
     validate_candidate,
     _pip_artifact_evidence,
 )
-from ci.trusted_qa_attestor import GitHubApiError, create_report, validate_dispatch_identity
+from ci.trusted_qa_attestor import (GitHubApiError, _verify_dependency_evidence, create_report,
+                                    list_run_artifacts, validate_dispatch_identity)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,14 +75,17 @@ class TrustedQaRunnerTests(unittest.TestCase):
             "task_owner": "CODEX_LEAD", "ownership_epoch": 1, "contract_revision": "v1",
             "owner_login": "owner", "protected_base_branch": "integration/command-center-qa",
             "trusted_workflow_branch": "secure-default", "trusted_check_name": "Trusted Independent QA",
-            "acceptance_criteria": ["test"], "dependency_files": ["requirements.txt", "constraints-windows-py312.txt"],
+            "acceptance_criteria": ["test"], "dependency_files": ["requirements-windows-py312-hashed.txt"],
             "test_files": ["tests/test_base.py"], "timeouts_seconds": {"dependency_install": 1, "build": 1, "tests": 1},
         }
         (self.workflow / "ci" / "trusted-qa-profile.json").write_text(json.dumps(profile), encoding="utf-8")
         (self.workflow / "ci" / "trusted_qa_suite_entry.py").write_bytes((ROOT / "ci" / "trusted_qa_suite_entry.py").read_bytes())
         (self.workflow / ".github" / "workflows" / "trusted-independent-qa.yml").write_text("name: trusted\n", encoding="utf-8")
         for name in profile["dependency_files"]:
-            (self.workflow / name).write_text("", encoding="utf-8")
+            (self.workflow / name).write_text(
+                "mcp==1.30.0 --hash=sha256:" + "c" * 64 + "\n"
+                "pip==25.0.1 --hash=sha256:" + "d" * 64 + "\n",
+                encoding="utf-8")
         (self.workflow / "tests" / "test_base.py").write_text(
             "import unittest\nclass FixedTest(unittest.TestCase):\n def test_trusted_fixture(self): self.assertEqual(2 + 2, 4)\n",
             encoding="utf-8")
@@ -198,6 +202,36 @@ class TrustedQaRunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(VerificationError, "UNVERIFIED_PIP_ARTIFACT"):
             _pip_artifact_evidence(report, "mcp==1.30.0\n")
 
+    def test_attestor_requires_every_locked_dependency_version_and_wheel_hash(self):
+        good = {"pip_report_sha256": "a" * 64, "freeze_sha256": "b" * 64,
+                "installed_packages": ["mcp==1.30.0", "pip==25.0.1"], "artifacts": [
+                    {"name": "mcp", "version": "1.30.0", "sha256": "c" * 64,
+                     "source_host": "files.pythonhosted.org"},
+                    {"name": "pip", "version": "25.0.1", "sha256": "d" * 64,
+                     "source_host": "pypi.org"}]}
+        self.assertTrue(_verify_dependency_evidence(self.workflow, good))
+        bad = json.loads(json.dumps(good))
+        bad["artifacts"][0]["sha256"] = "e" * 64
+        self.assertFalse(_verify_dependency_evidence(self.workflow, bad))
+        bad = json.loads(json.dumps(good))
+        bad["installed_packages"] = ["mcp==9.9.9", "pip==25.0.1"]
+        self.assertFalse(_verify_dependency_evidence(self.workflow, bad))
+
+    def test_run_attempt_selects_exactly_one_log_artifact(self):
+        payload = {"artifacts": [
+            {"name": "ktool-trusted-qa-log-41-1", "id": 11, "digest": "sha256:" + "a" * 64,
+             "size_in_bytes": 9, "expired": False},
+            {"name": "ktool-trusted-qa-log-41-2", "id": 12, "digest": "sha256:" + "b" * 64,
+             "size_in_bytes": 9, "expired": False},
+        ]}
+        with patch("ci.trusted_qa_attestor._api", return_value=payload):
+            result = list_run_artifacts("token", "owner/repo", "41", "2")
+        self.assertEqual(result[0]["artifact_id"], 12)
+        with patch("ci.trusted_qa_attestor._api", return_value={"artifacts": payload["artifacts"] + [
+            dict(payload["artifacts"][1], id=13)]}):
+            with self.assertRaisesRegex(GitHubApiError, "QA_LOG_ARTIFACT_NOT_UNIQUE"):
+                list_run_artifacts("token", "owner/repo", "41", "2")
+
     def test_dispatch_requires_exact_trusted_actor_branch_and_event(self):
         profile = json.loads((self.workflow / "ci" / "trusted-qa-profile.json").read_text(encoding="utf-8"))
         profile.update({"owner_login": "owner", "trusted_workflow_branch": "secure-default"})
@@ -227,7 +261,7 @@ class TrustedQaRunnerTests(unittest.TestCase):
         pr_binding = {"pr_number": 3, "pr_url": "https://github.com/owner/repo/pull/3", "pr_author": "worker",
                       "base_branch": "integration/command-center-qa", "base_sha": self.base_sha,
                       "candidate_sha": self.candidate_sha, "repository_id": 12, "head_repository_id": 12}
-        artifacts = [{"name": "ktool-trusted-qa-log", "artifact_id": 77, "sha256": "a" * 64,
+        artifacts = [{"name": "ktool-trusted-qa-log-1001-1", "artifact_id": 77, "sha256": "a" * 64,
                       "size_in_bytes": 123, "expired": False}]
         commands = [{"phase": "VENV", "argv": ["python", "-m", "venv"], "exit": 0},
                     {"phase": "DEPENDENCIES", "argv": ["python", "-m", "pip", "install"], "exit": 0},
@@ -235,8 +269,10 @@ class TrustedQaRunnerTests(unittest.TestCase):
                     {"phase": "BUILD", "argv": ["python", "-m", "compileall"], "exit": 0},
                     {"phase": "REGRESSION_TESTS", "argv": ["python", "-I", "trusted-suite"], "exit": 0}]
         dependency_evidence = {"pip_report_sha256": "a" * 64, "freeze_sha256": "b" * 64,
-                               "installed_packages": ["mcp==1.30.0"], "artifacts": [
+                               "installed_packages": ["mcp==1.30.0", "pip==25.0.1"], "artifacts": [
                                    {"name": "mcp", "version": "1.30.0", "sha256": "c" * 64,
+                                    "source_host": "files.pythonhosted.org"},
+                                   {"name": "pip", "version": "25.0.1", "sha256": "d" * 64,
                                     "source_host": "files.pythonhosted.org"}]}
         with patch.dict(os.environ, environment, clear=False), \
              patch("ci.trusted_qa_attestor.verify_pr_binding", return_value=pr_binding), \

@@ -26,6 +26,73 @@ class GitHubApiError(RuntimeError):
 
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
+LOCK_LINE = re.compile(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+!-]+) --hash=sha256:([0-9a-f]{64})$")
+
+
+def _package_key(value: str) -> str:
+    return re.sub(r"[-_.]+", "-", value).casefold()
+
+
+def _read_hashed_lock(path: Path) -> dict[str, tuple[str, str]]:
+    locked: dict[str, tuple[str, str]] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        match = LOCK_LINE.fullmatch(line)
+        if not match:
+            raise GitHubApiError("HASH_LOCK_LINE_INVALID")
+        name, version, digest = match.groups()
+        key = _package_key(name)
+        if key in locked:
+            raise GitHubApiError("HASH_LOCK_DUPLICATE_PACKAGE")
+        locked[key] = (version, digest)
+    if not locked:
+        raise GitHubApiError("HASH_LOCK_EMPTY")
+    return locked
+
+
+def _verify_dependency_evidence(workflow_root: Path, evidence: Any) -> bool:
+    """Require exact locked packages, versions, and wheel digests in runner evidence."""
+    try:
+        profile = json.loads((workflow_root / "ci" / "trusted-qa-profile.json").read_text(encoding="utf-8"))
+        if profile.get("dependency_files") != ["requirements-windows-py312-hashed.txt"]:
+            return False
+        lock = _read_hashed_lock(workflow_root / profile["dependency_files"][0])
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return False
+    if not (isinstance(evidence, dict) and HEX64.fullmatch(str(evidence.get("pip_report_sha256", "")))
+            and HEX64.fullmatch(str(evidence.get("freeze_sha256", "")))):
+        return False
+    installed = evidence.get("installed_packages")
+    artifacts = evidence.get("artifacts")
+    if not isinstance(installed, list) or not isinstance(artifacts, list):
+        return False
+    frozen: dict[str, str] = {}
+    for item in installed:
+        if not isinstance(item, str) or "==" not in item:
+            return False
+        name, version = item.split("==", 1)
+        key = _package_key(name)
+        if key in frozen:
+            return False
+        frozen[key] = version
+    artifact_map: dict[str, tuple[str, str]] = {}
+    for item in artifacts:
+        if (not isinstance(item, dict) or not isinstance(item.get("name"), str)
+                or not isinstance(item.get("version"), str) or not HEX64.fullmatch(str(item.get("sha256", "")))
+                or item.get("source_host") not in ("pypi.org", "files.pythonhosted.org")):
+            return False
+        key = _package_key(item["name"])
+        if key in artifact_map:
+            return False
+        artifact_map[key] = (item["version"], item["sha256"])
+    if set(frozen) != set(lock) or set(artifact_map) != set(lock):
+        return False
+    for key, (version, digest) in lock.items():
+        if frozen.get(key) != version or artifact_map.get(key) != (version, digest):
+            return False
+    return "mcp" in lock
 
 
 def _api(token: str, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -119,16 +186,18 @@ def verify_pr_binding(
     }
 
 
-def list_run_artifacts(token: str, repository: str, run_id: str) -> list[dict[str, Any]]:
+def list_run_artifacts(token: str, repository: str, run_id: str, run_attempt: str) -> list[dict[str, Any]]:
     if not run_id.isdigit():
         raise GitHubApiError("INVALID_WORKFLOW_RUN_ID")
+    if not run_attempt.isdigit() or int(run_attempt) < 1:
+        raise GitHubApiError("INVALID_WORKFLOW_RUN_ATTEMPT")
     data = _api(token, "GET", f"repos/{quote(repository, safe='/')}/actions/runs/{run_id}/artifacts?per_page=100")
     items = data.get("artifacts")
     if not isinstance(items, list):
         raise GitHubApiError("ARTIFACT_RESPONSE_SCHEMA")
     result = []
     for item in items:
-        if item.get("name") != "ktool-trusted-qa-log":
+        if item.get("name") != f"ktool-trusted-qa-log-{run_id}-{run_attempt}":
             continue
         digest = item.get("digest", "")
         if not isinstance(digest, str) or not digest.startswith("sha256:") or not HEX64.fullmatch(digest[7:]):
@@ -137,8 +206,8 @@ def list_run_artifacts(token: str, repository: str, run_id: str) -> list[dict[st
             raise GitHubApiError("QA_LOG_ARTIFACT_EXPIRED")
         result.append({"name": item["name"], "artifact_id": item.get("id"), "sha256": digest[7:],
                        "size_in_bytes": item.get("size_in_bytes"), "expired": item.get("expired")})
-    if not result:
-        raise GitHubApiError("QA_LOG_ARTIFACT_MISSING")
+    if len(result) != 1:
+        raise GitHubApiError("QA_LOG_ARTIFACT_NOT_UNIQUE")
     return result
 
 
@@ -204,21 +273,7 @@ def create_report(
         dependency_evidence = json.loads(dependency_evidence_output)
     except (TypeError, json.JSONDecodeError):
         dependency_evidence = {}
-    dependency_valid = (
-        isinstance(dependency_evidence, dict) and
-        bool(HEX64.fullmatch(str(dependency_evidence.get("pip_report_sha256", "")))) and
-        bool(HEX64.fullmatch(str(dependency_evidence.get("freeze_sha256", "")))) and
-        isinstance(dependency_evidence.get("installed_packages"), list) and
-        isinstance(dependency_evidence.get("artifacts"), list) and bool(dependency_evidence["artifacts"]) and
-        any(isinstance(item, str) and item.casefold().startswith("mcp==")
-            for item in dependency_evidence.get("installed_packages", [])) and
-        any(isinstance(item, dict) and str(item.get("name", "")).casefold() == "mcp"
-            for item in dependency_evidence.get("artifacts", [])) and
-        all(isinstance(item, dict) and isinstance(item.get("name"), str) and isinstance(item.get("version"), str)
-            and bool(HEX64.fullmatch(str(item.get("sha256", ""))))
-            and item.get("source_host") in ("pypi.org", "files.pythonhosted.org")
-            for item in dependency_evidence["artifacts"])
-    )
+    dependency_valid = _verify_dependency_evidence(workflow_root, dependency_evidence)
     try:
         qa_exit = int(test_exit_code)
     except (TypeError, ValueError):
@@ -226,7 +281,7 @@ def create_report(
     workflow_file = workflow_root / ".github" / "workflows" / "trusted-independent-qa.yml"
     if not workflow_file.is_file() or not workflow_ref.endswith("@refs/heads/" + profile["trusted_workflow_branch"]):
         raise GitHubApiError("WORKFLOW_SOURCE_NOT_TRUSTED")
-    artifacts = list_run_artifacts(token, repository, workflow_run_id)
+    artifacts = list_run_artifacts(token, repository, workflow_run_id, workflow_run_attempt)
     passed = (test_job_result == "success" and test_step_outcome == "success" and qa_exit == 0
               and commands["all_zero"] and dependency_valid)
     for expected_key, output_key in (("tree_sha", "tree_sha"), ("profile_digest", "profile_digest"),

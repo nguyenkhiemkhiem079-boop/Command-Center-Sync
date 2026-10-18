@@ -19,12 +19,11 @@
     "Changed paths satisfy the owner-approved scope policy from the selected protected base.",
     "Candidate contains no symlink, submodule, junction, traversal, or Windows path alias in the materialized tree.",
     "Build and regression tests come from the trusted QA profile and trusted base test files, never candidate test files.",
-    "Build and test commands execute on an ephemeral GitHub-hosted Windows runner without repository secrets or write-capable credentials; dependencies are installed from binary wheels under the trusted version constraints.",
+    "Build and test commands execute on an ephemeral GitHub-hosted Windows runner without repository secrets or write-capable credentials; every binary wheel is pinned by exact version and SHA-256 in the trusted lock.",
     "Only a separate attestor job may create a signed QA report and the Trusted Independent QA check on the exact candidate SHA."
   ],
   "dependency_files": [
-    "requirements.txt",
-    "constraints-windows-py312.txt"
+    "requirements-windows-py312-hashed.txt"
   ],
   "test_files": [
     "tests/test_anti_runtime.py",
@@ -53,7 +52,8 @@
     "tests/test_transaction_sync.py",
     "tests/test_trust_vault.py",
     "tests/test_worktree_manager.py",
-    "tests/test_trusted_qa_runner.py"
+    "tests/test_trusted_qa_runner.py",
+    "tests/test_trusted_qa_attestation.py"
   ],
   "timeouts_seconds": {
     "venv_create": 180,
