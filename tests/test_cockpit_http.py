@@ -6,6 +6,7 @@ class CockpitHttpTests(unittest.TestCase):
     call=dashboard.TestDashboard.call
     login=dashboard.TestDashboard.login
     rpc=studio.TestRunStudio.rpc
+    controller_fixture=studio.TestRunStudio.controller_fixture
     def test_cockpit_session_and_bad_diff_query(self):
         self.assertEqual(self.call('/ui/api/cockpit')[0],401)
         self.assertEqual(self.call('/ui/api/assignment-diff?assignment=missing')[0],401)
@@ -46,4 +47,11 @@ class CockpitHttpTests(unittest.TestCase):
         jars=[h.cookiejar for h in self.opener.handlers if hasattr(h,'cookiejar')]
         names={cookie.name for jar in jars for cookie in jar}
         self.assertIn('kt_session_'+str(self.srv.server_port),names);self.assertIn('kt_session_'+str(other.server_port),names)
+    def test_controller_frozen_locks_and_mode_are_not_hidden_by_legacy(self):
+        control=self.controller_fixture()
+        with control.transaction() as db:db.execute("INSERT INTO cc_locks VALUES('module','A1','ANTI-01',1,'FROZEN')")
+        control.set_mode('CODEX','RECOVERY_REQUIRED')
+        self.login();code,data=self.call('/ui/api/snapshot')
+        self.assertEqual(code,200);r=data['result'];self.assertEqual(r['control']['mode'],'RECOVERY_REQUIRED')
+        self.assertEqual(r['controller_summary']['locks'],1);self.assertEqual(r['controller_summary']['worksharing_locks'][0]['resume'],'VERIFIED_PROCESS_PROOF_REQUIRED')
 if __name__=='__main__':unittest.main()

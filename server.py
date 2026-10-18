@@ -188,6 +188,8 @@ def handler_factory(store: Registry, hashes: dict):
                         result['controller_summary']={'locks':db.execute('SELECT count(*) FROM cc_locks').fetchone()[0],'assignments':db.execute('SELECT count(*) FROM cc_assignments').fetchone()[0],
                             'frozen_locks':db.execute("SELECT count(*) FROM cc_locks WHERE state='FROZEN'").fetchone()[0],
                             'mode':mode,'source':'CONTROLLER_SQLITE','legacy_tasks_separate':True}
+                        seen=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+                        result['controller_summary']['worksharing_locks']=[{**dict(r),'source':'CONTROLLER_SQLITE','last_verified_at':seen,'resume':'VERIFIED_PROCESS_PROOF_REQUIRED'} for r in db.execute('SELECT scope,assignment,owner,epoch,state FROM cc_locks ORDER BY assignment,scope LIMIT 500')]
                     if mode in ('EMERGENCY_STOP','RECOVERY_REQUIRED'):
                         result['control']['mode']=mode
                         result['control']['frozen_locks']+=result['controller_summary']['frozen_locks']
