@@ -1,0 +1,431 @@
+test_conversation_continuity_and_duplicate_results (test_anti_runtime.RuntimeTests.test_conversation_continuity_and_duplicate_results) ... ok
+test_denied_success_is_blocked (test_anti_runtime.RuntimeTests.test_denied_success_is_blocked) ... ok
+test_empty_missing_timeout_nonzero_and_malformed_fail_closed (test_anti_runtime.RuntimeTests.test_empty_missing_timeout_nonzero_and_malformed_fail_closed) ... ok
+test_fixture_process_success_and_timeout_no_restart (test_anti_runtime.RuntimeTests.test_fixture_process_success_and_timeout_no_restart) ... ok
+test_local_pilots_blocked_despite_success (test_anti_runtime.RuntimeTests.test_local_pilots_blocked_despite_success) ... 
+  test_local_pilots_blocked_despite_success (test_anti_runtime.RuntimeTests.test_local_pilots_blocked_despite_success) (name='agy-01-teamwork.jsonl') ... skipped 'Captured pilot logs are not distributed with this source'
+  test_local_pilots_blocked_despite_success (test_anti_runtime.RuntimeTests.test_local_pilots_blocked_despite_success) (name='agy-02-teamwork.jsonl') ... skipped 'Captured pilot logs are not distributed with this source'
+test_modes_argv_and_no_native_entitlement_inference (test_anti_runtime.RuntimeTests.test_modes_argv_and_no_native_entitlement_inference) ... ok
+test_native_teamwork_flags_cannot_fabricate_attestation (test_anti_runtime.RuntimeTests.test_native_teamwork_flags_cannot_fabricate_attestation) ... ok
+test_success_is_unverified_not_acceptance (test_anti_runtime.RuntimeTests.test_success_is_unverified_not_acceptance) ... ok
+test_tool_error_survives_success_and_redacts_everything (test_anti_runtime.RuntimeTests.test_tool_error_survives_success_and_redacts_everything) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_explicit_process_environment_identity (test_client_identity.ClientIdentityTests.test_explicit_process_environment_identity) ... Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type ListToolsRequest
+ok
+test_invalid_port_cannot_redirect_credentials (test_client_identity.ClientIdentityTests.test_invalid_port_cannot_redirect_credentials) ... ok
+test_legacy_common_file_without_explicit_identity_cannot_start (test_client_identity.ClientIdentityTests.test_legacy_common_file_without_explicit_identity_cannot_start) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_mismatch_exits_before_stdio_tools_and_never_prints_token (test_client_identity.ClientIdentityTests.test_mismatch_exits_before_stdio_tools_and_never_prints_token) ... ok
+test_redirects_never_forward_bearer_credentials (test_client_identity.ClientIdentityTests.test_redirects_never_forward_bearer_credentials) ... Executing <Task pending name='Task-35' coro=<ClientIdentityTests.test_redirects_never_forward_bearer_credentials() running at C:\KTOOL\CommandCenter\MCP\tests\test_client_identity.py:153> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:181] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 0.453 seconds
+Executing <Task pending name='Task-35' coro=<ClientIdentityTests.test_redirects_never_forward_bearer_credentials() running at C:\KTOOL\CommandCenter\MCP\tests\test_client_identity.py:153> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:181] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 0.454 seconds
+Executing <Task pending name='Task-35' coro=<ClientIdentityTests.test_redirects_never_forward_bearer_credentials() running at C:\KTOOL\CommandCenter\MCP\tests\test_client_identity.py:153> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:181] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 0.484 seconds
+Executing <Task pending name='Task-35' coro=<ClientIdentityTests.test_redirects_never_forward_bearer_credentials() running at C:\KTOOL\CommandCenter\MCP\tests\test_client_identity.py:153> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:181] created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 0.484 seconds
+Executing <Task finished name='Task-35' coro=<ClientIdentityTests.test_redirects_never_forward_bearer_credentials() done, defined at C:\KTOOL\CommandCenter\MCP\tests\test_client_identity.py:123> result=None created at C:\Users\khiem.nguyen\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 0.938 seconds
+ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_three_concurrent_adapters_same_os_positive_negative_rbac (test_client_identity.ClientIdentityTests.test_three_concurrent_adapters_same_os_positive_negative_rbac) ... Processing request of type CallToolRequest
+Processing request of type CallToolRequest
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type ListToolsRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type ListToolsRequest
+Processing request of type ListToolsRequest
+Processing request of type ListToolsRequest
+Processing request of type ListToolsRequest
+Processing request of type ListToolsRequest
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+Processing request of type CallToolRequest
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_active_owner_exclusive_during_rework (test_coordinator.TestDualDev.test_active_owner_exclusive_during_rework) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_agent_busy (test_coordinator.TestDualDev.test_agent_busy) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_closed_release_requires_codex_and_confirmation (test_coordinator.TestDualDev.test_closed_release_requires_codex_and_confirmation) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_conflict_on_parent_child (test_coordinator.TestDualDev.test_conflict_on_parent_child) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+test_dual_parallel_development (test_coordinator.TestDualDev.test_dual_parallel_development) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_failed_self_qa_cannot_sync (test_coordinator.TestDualDev.test_failed_self_qa_cannot_sync) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_freeze_keeps_lock_and_blocks_worker (test_coordinator.TestDualDev.test_freeze_keeps_lock_and_blocks_worker) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_frozen_outside_scope_claim_retains_lock (test_coordinator.TestDualDev.test_frozen_outside_scope_claim_retains_lock) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 400 -
+[ktool-http] "POST /rpc HTTP/1.1" 400 -
+test_invalid_scope_and_sha (test_coordinator.TestDualDev.test_invalid_scope_and_sha) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 400 -
+test_nonworker_qa_prohibited (test_coordinator.TestDualDev.test_nonworker_qa_prohibited) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_pass_requires_independent_qa_gate (test_coordinator.TestDualDev.test_pass_requires_independent_qa_gate) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+test_repeated_feedback_escalation_recommended (test_coordinator.TestDualDev.test_repeated_feedback_escalation_recommended) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_review_correction_rework (test_coordinator.TestDualDev.test_review_correction_rework) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_review_not_applicable_requires_explicit_configuration (test_coordinator.TestDualDev.test_review_not_applicable_requires_explicit_configuration) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 401 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+test_roles (test_coordinator.TestDualDev.test_roles) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+test_simultaneous_assign_no_double_lock (test_coordinator.TestDualDev.test_simultaneous_assign_no_double_lock) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_two_worker_contact_not_teamwork_proof (test_coordinator.TestDualDev.test_two_worker_contact_not_teamwork_proof) ... ok
+test_v03_schema_upgrade (test_coordinator.TestDualDev.test_v03_schema_upgrade) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_workers_submit_and_codex_reviews (test_coordinator.TestDualDev.test_workers_submit_and_codex_reviews) ... ok
+[ktool-http] "GET /ui HTTP/1.1" 200 -
+[ktool-http] "GET /ui/dashboard.js HTTP/1.1" 200 -
+[ktool-http] "GET /ui/dashboard.css HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 401 -
+test_assets_public_but_data_private (test_dashboard.TestDashboard.test_assets_public_but_data_private) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/assign HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/assign HTTP/1.1" 409 -
+[ktool-http] "POST /ui/api/freeze HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+test_create_assign_freeze_and_lock_in_snapshot (test_dashboard.TestDashboard.test_create_assign_freeze_and_lock_in_snapshot) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/assign HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/assign HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/report?wave_id=W42 HTTP/1.1" 200 -
+test_dashboard_two_devs_and_codex_report (test_dashboard.TestDashboard.test_dashboard_two_devs_and_codex_report) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/logout HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 401 -
+test_logout (test_dashboard.TestDashboard.test_logout) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+test_mcp_roles_unchanged (test_dashboard.TestDashboard.test_mcp_roles_unchanged) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 401 -
+[ktool-http] "POST /ui/api/login HTTP/1.1" 401 -
+test_non_codex_cannot_login (test_dashboard.TestDashboard.test_non_codex_cannot_login) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 403 -
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 403 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 403 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 200 -
+test_origin_and_csrf_required (test_dashboard.TestDashboard.test_origin_and_csrf_required) ... ok
+[ktool-http] "POST /ui/api/backup HTTP/1.1" 401 -
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/backup HTTP/1.1" 403 -
+[ktool-http] "POST /ui/api/backup HTTP/1.1" 403 -
+[ktool-http] "POST /ui/api/backup HTTP/1.1" 200 -
+test_backup_auth_csrf_and_manifest (test_dashboard_v07.TestDashboardV07.test_backup_auth_csrf_and_manifest) ... ok
+[ktool-http] "GET /ui/api/task-evidence?tid=T1 HTTP/1.1" 401 -
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/task-evidence?tid=T1 HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/task-evidence?tid=missing HTTP/1.1" 404 -
+test_task_evidence_authenticated_dedicated_read (test_dashboard_v07.TestDashboardV07.test_task_evidence_authenticated_dedicated_read) ... ok
+[ktool-http] "GET /ui HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/task-evidence?path=C:/Windows/win.ini HTTP/1.1" 401 -
+[ktool-http] "GET /ui/dashboard.js HTTP/1.1" 200 -
+test_ui_reality_labels_and_no_file_read_endpoint (test_dashboard_v07.TestDashboardV07.test_ui_reality_labels_and_no_file_read_endpoint) ... ok
+test_nonancestor_baseline_never_executes_commands (test_hardening.HardeningTests.test_nonancestor_baseline_never_executes_commands) ... ok
+test_nonboolean_stop_confirmation_denied (test_hardening.HardeningTests.test_nonboolean_stop_confirmation_denied) ... ok
+test_tests_change_head_fail (test_hardening.HardeningTests.test_tests_change_head_fail) ... ok
+test_tests_dirty_tracked_source_fail (test_hardening.HardeningTests.test_tests_dirty_tracked_source_fail) ... ok
+test_valid_descendant_clean_checkout_passes (test_hardening.HardeningTests.test_valid_descendant_clean_checkout_passes) ... ok
+test_windows_alias_scopes_rejected (test_hardening.HardeningTests.test_windows_alias_scopes_rejected) ... ok
+test_all_master_types_persist_and_never_grant_permissions (test_human_requests.HumanRequestTests.test_all_master_types_persist_and_never_grant_permissions) ... ok
+test_deadline_validation_and_canonical_idempotency (test_human_requests.HumanRequestTests.test_deadline_validation_and_canonical_idempotency) ... ok
+test_expiry_rejects_decision_and_resolution_is_once_only (test_human_requests.HumanRequestTests.test_expiry_rejects_decision_and_resolution_is_once_only) ... ok
+test_legacy_migration_preserves_request_and_id (test_human_requests.HumanRequestTests.test_legacy_migration_preserves_request_and_id) ... ok
+test_legacy_boolean_recovery_release_fail_closed_and_roles_first (test_legacy_boundaries.LegacyBoundaryTests.test_legacy_boolean_recovery_release_fail_closed_and_roles_first) ... ok
+test_legacy_emergency_freezes_new_controller (test_legacy_boundaries.LegacyBoundaryTests.test_legacy_emergency_freezes_new_controller) ... ok
+test_new_emergency_mode_blocks_legacy_writes (test_legacy_boundaries.LegacyBoundaryTests.test_new_emergency_mode_blocks_legacy_writes) ... ok
+test_new_lock_blocks_legacy_same_parent_child_scope (test_legacy_boundaries.LegacyBoundaryTests.test_new_lock_blocks_legacy_same_parent_child_scope) ... ok
+test_new_recovery_mode_blocks_legacy_writes (test_legacy_boundaries.LegacyBoundaryTests.test_new_recovery_mode_blocks_legacy_writes) ... ok
+test_new_resource_blocks_legacy_disjoint_scope (test_legacy_boundaries.LegacyBoundaryTests.test_new_resource_blocks_legacy_disjoint_scope) ... ok
+test_additive_migration_preserves_legacy_data (test_orchestration.OrchestrationTests.test_additive_migration_preserves_legacy_data) ... ok
+test_atomic_wave_idempotent_retry_and_restart (test_orchestration.OrchestrationTests.test_atomic_wave_idempotent_retry_and_restart) ... ok
+test_checkpoint_requires_worker_acknowledgment (test_orchestration.OrchestrationTests.test_checkpoint_requires_worker_acknowledgment) ... ok
+test_circular_dependencies_rollback_parent_and_children (test_orchestration.OrchestrationTests.test_circular_dependencies_rollback_parent_and_children) ... ok
+test_contract_hash_immutable_and_baseline_requires_owner (test_orchestration.OrchestrationTests.test_contract_hash_immutable_and_baseline_requires_owner) ... ok
+test_crash_freeze_verified_stop_resume_and_stale_epoch (test_orchestration.OrchestrationTests.test_crash_freeze_verified_stop_resume_and_stale_epoch) ... ok
+test_emergency_stop_is_absorbing_and_legacy_emergency_blocks_dispatch (test_orchestration.OrchestrationTests.test_emergency_stop_is_absorbing_and_legacy_emergency_blocks_dispatch) ... ok
+test_human_request_does_not_grant_privileges (test_orchestration.OrchestrationTests.test_human_request_does_not_grant_privileges) ... ok
+test_lead_unavailable_keeps_authorized_checkpoints_without_approval (test_orchestration.OrchestrationTests.test_lead_unavailable_keeps_authorized_checkpoints_without_approval) ... ok
+test_multiple_paths_forbidden_and_actual_diff_enforcement (test_orchestration.OrchestrationTests.test_multiple_paths_forbidden_and_actual_diff_enforcement) ... ok
+test_nested_wave_narrowing_and_suspended_parent (test_orchestration.OrchestrationTests.test_nested_wave_narrowing_and_suspended_parent) ... ok
+test_nonexistent_and_empty_checkpoint_rejected (test_orchestration.OrchestrationTests.test_nonexistent_and_empty_checkpoint_rejected) ... ok
+test_old_checkpoint_cannot_be_submitted_after_verified_resume (test_orchestration.OrchestrationTests.test_old_checkpoint_cannot_be_submitted_after_verified_resume) ... ok
+test_parent_child_lock_conflict_and_shared_resource (test_orchestration.OrchestrationTests.test_parent_child_lock_conflict_and_shared_resource) ... ok
+test_provider_completion_and_early_child_never_complete_wave (test_orchestration.OrchestrationTests.test_provider_completion_and_early_child_never_complete_wave) ... ok
+test_shared_core_and_capability_wait (test_orchestration.OrchestrationTests.test_shared_core_and_capability_wait) ... ok
+test_subagent_cannot_expand_parent_tools_or_scope (test_orchestration.OrchestrationTests.test_subagent_cannot_expand_parent_tools_or_scope) ... ok
+test_three_unchanged_defects_freeze_without_releasing_lock (test_orchestration.OrchestrationTests.test_three_unchanged_defects_freeze_without_releasing_lock) ... ok
+test_two_dispatches_are_concurrent_but_not_running_until_ack (test_orchestration.OrchestrationTests.test_two_dispatches_are_concurrent_but_not_running_until_ack) ... ok
+test_worker_cannot_self_approve_and_production_callback_cannot_forge_trust (test_orchestration.OrchestrationTests.test_worker_cannot_self_approve_and_production_callback_cannot_forge_trust) ... ok
+test_wrong_owner_steering_and_durable_ack (test_orchestration.OrchestrationTests.test_wrong_owner_steering_and_durable_ack) ... ok
+test_backup_hash_and_integrity (test_recovery.TestRecovery.test_backup_hash_and_integrity) ... ok
+test_crash_restart_freezes_fails_closed (test_recovery.TestRecovery.test_crash_restart_freezes_fails_closed) ... ok
+test_dependency_must_be_integrated (test_recovery.TestRecovery.test_dependency_must_be_integrated) ... ok
+test_emergency_stop_freezes_and_blocks_all_new_work (test_recovery.TestRecovery.test_emergency_stop_freezes_and_blocks_all_new_work) ... ok
+test_legacy_boolean_recovery_is_blocked_and_locks_retained (test_recovery.TestRecovery.test_legacy_boolean_recovery_is_blocked_and_locks_retained) ... ok
+test_qa_evidence_role_read_only (test_recovery.TestRecovery.test_qa_evidence_role_read_only) ... ok
+test_qa_runner_real_git_and_commit_gate (test_recovery.TestRecovery.test_qa_runner_real_git_and_commit_gate) ... ok
+test_quota_exhaustion_freezes_only_owner (test_recovery.TestRecovery.test_quota_exhaustion_freezes_only_owner) ... ok
+test_resource_conflict_different_directories (test_recovery.TestRecovery.test_resource_conflict_different_directories) ... ok
+test_resource_nonconflict_parallel (test_recovery.TestRecovery.test_resource_nonconflict_parallel) ... ok
+test_stale_heartbeat_is_not_auto_release (test_recovery.TestRecovery.test_stale_heartbeat_is_not_auto_release) ... ok
+test_stop_role_separation (test_recovery.TestRecovery.test_stop_role_separation) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/assign HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/emergency-stop HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/create HTTP/1.1" 423 -
+[ktool-http] "POST /ui/api/resume-control HTTP/1.1" 409 -
+[ktool-http] "POST /ui/api/resume-control HTTP/1.1" 409 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "POST /ui/api/resume-task HTTP/1.1" 409 -
+test_emergency_ui_role_csrf_and_readiness (test_recovery_http.TestRecoveryHttp.test_emergency_ui_role_csrf_and_readiness) ... ok
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 401 -
+[ktool-http] "POST /ui/api/emergency-stop HTTP/1.1" 401 -
+test_recovery_ui_requires_login (test_recovery_http.TestRecoveryHttp.test_recovery_ui_requires_login) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+test_worker_cannot_admin_over_mcp (test_recovery_http.TestRecoveryHttp.test_worker_cannot_admin_over_mcp) ... ok
+test_actual_owned_handle_termination (test_recovery_manager.RecoveryManagerTests.test_actual_owned_handle_termination) ... ok
+test_bundle_actual_clone_and_hash_verification (test_recovery_manager.RecoveryManagerTests.test_bundle_actual_clone_and_hash_verification) ... ok
+test_bundle_tamper_or_snapshot_substitution_rejected (test_recovery_manager.RecoveryManagerTests.test_bundle_tamper_or_snapshot_substitution_rejected) ... ok
+test_sqlite_full_restore_new_target_retains_task_data (test_recovery_manager.RecoveryManagerTests.test_sqlite_full_restore_new_target_retains_task_data) ... ok
+test_sqlite_tamper_rejected (test_recovery_manager.RecoveryManagerTests.test_sqlite_tamper_rejected) ... ok
+test_unrelated_reused_or_altered_record_cannot_authorize (test_recovery_manager.RecoveryManagerTests.test_unrelated_reused_or_altered_record_cannot_authorize) ... ok
+[ktool-http] "GET /ui/api/run-studio HTTP/1.1" 401 -
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/run-studio HTTP/1.1" 200 -
+test_auth_and_controller_snapshot (test_run_studio.TestRunStudio.test_auth_and_controller_snapshot) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 409 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "POST /rpc HTTP/1.1" 423 -
+[ktool-http] "POST /rpc HTTP/1.1" 423 -
+test_control_roles_ack_and_frozen_guard (test_run_studio.TestRunStudio.test_control_roles_ack_and_frozen_guard) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/run-studio HTTP/1.1" 500 -
+test_controller_error_is_not_exposed (test_run_studio.TestRunStudio.test_controller_error_is_not_exposed) ... ok
+[ktool-http] "POST /ui/api/login HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/snapshot HTTP/1.1" 200 -
+[ktool-http] "GET /ui/api/run-studio HTTP/1.1" 503 -
+test_fail_closed_without_controller (test_run_studio.TestRunStudio.test_fail_closed_without_controller) ... ok
+[ktool-http] "POST /rpc HTTP/1.1" 400 -
+[ktool-http] "POST /rpc HTTP/1.1" 400 -
+[ktool-http] "POST /rpc HTTP/1.1" 403 -
+[ktool-http] "POST /rpc HTTP/1.1" 200 -
+[ktool-http] "GET /health HTTP/1.1" 200 -
+test_no_remote_approval_and_emergency_updates_both (test_run_studio.TestRunStudio.test_no_remote_approval_and_emergency_updates_both) ... ok
+[ktool-http] "GET /ui HTTP/1.1" 200 -
+[ktool-http] "GET /ui/dashboard.js HTTP/1.1" 200 -
+test_original_ui_and_unknown_defaults (test_run_studio.TestRunStudio.test_original_ui_and_unknown_defaults) ... ok
+test_allowed_modification (test_scope_gate.ScopeGateTests.test_allowed_modification) ... ok
+test_allowed_paths_narrow_scope (test_scope_gate.ScopeGateTests.test_allowed_paths_narrow_scope) ... ok
+test_delete_records (test_scope_gate.ScopeGateTests.test_delete_records) ... ok
+test_false_worker_claim_quarantines_actual_outside_diff (test_scope_gate.ScopeGateTests.test_false_worker_claim_quarantines_actual_outside_diff) ... ok
+test_future_or_stale_reversed_base (test_scope_gate.ScopeGateTests.test_future_or_stale_reversed_base) ... ok
+test_index_symlink_without_windows_privilege (test_scope_gate.ScopeGateTests.test_index_symlink_without_windows_privilege) ... ok
+test_mutable_ref_rejected (test_scope_gate.ScopeGateTests.test_mutable_ref_rejected) ... ok
+test_out_of_scope (test_scope_gate.ScopeGateTests.test_out_of_scope) ... ok
+test_physical_windows_junction_is_rejected (test_scope_gate.ScopeGateTests.test_physical_windows_junction_is_rejected) ... ok
+test_protected_fixture (test_scope_gate.ScopeGateTests.test_protected_fixture) ... ok
+test_rename_outside_records_both_paths (test_scope_gate.ScopeGateTests.test_rename_outside_records_both_paths) ... ok
+test_traversal_policy_rejected (test_scope_gate.ScopeGateTests.test_traversal_policy_rejected) ... ok
+test_unrelated_base (test_scope_gate.ScopeGateTests.test_unrelated_base) ... ok
+test_actual_git_cherry_pick_conflict (test_transaction_sync.TransactionTests.test_actual_git_cherry_pick_conflict) ... ok
+test_central_advance_after_qa_atomic_abort (test_transaction_sync.TransactionTests.test_central_advance_after_qa_atomic_abort) ... ok
+test_combined_qa_and_atomic_disposable_commit (test_transaction_sync.TransactionTests.test_combined_qa_and_atomic_disposable_commit) ... ok
+test_explicit_journal_and_interrupted_ref_write_never_redone (test_transaction_sync.TransactionTests.test_explicit_journal_and_interrupted_ref_write_never_redone) ... ok
+test_failed_qa_aborts_central_unchanged (test_transaction_sync.TransactionTests.test_failed_qa_aborts_central_unchanged) ... ok
+test_journal_immutable_digest_and_history_tampering_rejected (test_transaction_sync.TransactionTests.test_journal_immutable_digest_and_history_tampering_rejected) ... ok
+test_journal_keeps_qa_output_digests_without_raw_text (test_transaction_sync.TransactionTests.test_journal_keeps_qa_output_digests_without_raw_text) ... ok
+test_owner_required_worker_cannot_approve (test_transaction_sync.TransactionTests.test_owner_required_worker_cannot_approve) ... ok
+test_production_central_write_blocked (test_transaction_sync.TransactionTests.test_production_central_write_blocked) ... ok
+test_real_process_exit_before_cherry_pick_recovers_abort_without_replay (test_transaction_sync.TransactionTests.test_real_process_exit_before_cherry_pick_recovers_abort_without_replay) ... ok
+test_reconstruct_approval_pending_rejects_central_cas_change (test_transaction_sync.TransactionTests.test_reconstruct_approval_pending_rejects_central_cas_change) ... ok
+test_reconstruct_approval_pending_then_atomic_cas_commit (test_transaction_sync.TransactionTests.test_reconstruct_approval_pending_then_atomic_cas_commit) ... ok
+test_scope_violation_aborts_before_qa (test_transaction_sync.TransactionTests.test_scope_violation_aborts_before_qa) ... ok
+test_stale_reconstructed_writer_cannot_repeat_commit (test_transaction_sync.TransactionTests.test_stale_reconstructed_writer_cannot_repeat_commit) ... ok
+test_binding_epoch_mismatch (test_trust_vault.TrustVaultTests.test_binding_epoch_mismatch) ... ok
+test_changed_policy (test_trust_vault.TrustVaultTests.test_changed_policy) ... ok
+test_command_failure_or_substitution (test_trust_vault.TrustVaultTests.test_command_failure_or_substitution) ... ok
+test_config_and_artifact_tampering (test_trust_vault.TrustVaultTests.test_config_and_artifact_tampering) ... ok
+test_fabricated_changed_paths_with_matching_policy_rejected (test_trust_vault.TrustVaultTests.test_fabricated_changed_paths_with_matching_policy_rejected) ... ok
+test_local_never_production_trusted (test_trust_vault.TrustVaultTests.test_local_never_production_trusted) ... ok
+test_matching_fake_cannot_enable_production_by_clearing_synthetic_flag (test_trust_vault.TrustVaultTests.test_matching_fake_cannot_enable_production_by_clearing_synthetic_flag) ... ok
+test_mismatched_remote_sha_and_workflow_rejected (test_trust_vault.TrustVaultTests.test_mismatched_remote_sha_and_workflow_rejected) ... ok
+test_missing_fields_rejected (test_trust_vault.TrustVaultTests.test_missing_fields_rejected) ... ok
+test_missing_local_checkout_for_remote_repo_rejected (test_trust_vault.TrustVaultTests.test_missing_local_checkout_for_remote_repo_rejected) ... ok
+test_missing_synthetic_attribute_cannot_enable_production (test_trust_vault.TrustVaultTests.test_missing_synthetic_attribute_cannot_enable_production) ... ok
+test_nonancestor_baseline_rejected (test_trust_vault.TrustVaultTests.test_nonancestor_baseline_rejected) ... ok
+test_nonexistent_artifact (test_trust_vault.TrustVaultTests.test_nonexistent_artifact) ... ok
+test_nonexistent_candidate_with_matching_policy_rejected (test_trust_vault.TrustVaultTests.test_nonexistent_candidate_with_matching_policy_rejected) ... ok
+test_scope_policy_restricts_actual_source_paths (test_trust_vault.TrustVaultTests.test_scope_policy_restricts_actual_source_paths) ... ok
+test_stale (test_trust_vault.TrustVaultTests.test_stale) ... ok
+test_subdirectory_is_not_repository_root (test_trust_vault.TrustVaultTests.test_subdirectory_is_not_repository_root) ... ok
+test_synthetic_ci_never_production_trusted (test_trust_vault.TrustVaultTests.test_synthetic_ci_never_production_trusted) ... ok
+test_tree_mismatch_with_matching_policy_rejected (test_trust_vault.TrustVaultTests.test_tree_mismatch_with_matching_policy_rejected) ... ok
+test_worker_pass_boolean_not_accepted (test_trust_vault.TrustVaultTests.test_worker_pass_boolean_not_accepted) ... ok
+
+----------------------------------------------------------------------
+Ran 155 tests in 118.433s
+
+OK (skipped=2)

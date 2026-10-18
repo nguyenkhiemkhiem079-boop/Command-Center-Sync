@@ -25,7 +25,7 @@
 | Disposable worker harness | PASS — simulated/local fixtures | Hai fixture process chạy chồng thời gian, feedback/rework và combined integration; không phải Anti thật. |
 | Recovery drill | PASS — disposable coordinator | 23 assertions; xem [RECOVERY_SMOKE_TEST.md](RECOVERY_SMOKE_TEST.md). Không restart production. |
 
-Bộ regression cài đặt chạy bằng `C:\KTOOL\CommandCenter\venv\Scripts\python.exe -m unittest discover -s C:\KTOOL\CommandCenter\MCP\tests -v`: **155 tests, 0 failures, 2 skipped**. Hai test bị skip do log pilot `agy-01-teamwork.jsonl` và `agy-02-teamwork.jsonl` không có trong source; đây không phải xác minh phiên Teamwork. Log đầy đủ: `evidence/installed-regression.log`.
+Bộ regression cài đặt chạy bằng `C:\KTOOL\CommandCenter\venv\Scripts\python.exe -m unittest discover -s C:\KTOOL\CommandCenter\MCP\tests -v`: **155 tests, 0 failures, 2 skipped**. Hai test bị skip do log pilot `agy-01-teamwork.jsonl` và `agy-02-teamwork.jsonl` không có trong source; đây không phải xác minh phiên Teamwork. Log đầy đủ: [installed-regression.txt](evidence/installed-regression.txt). Output recovery có tại [recovery-drill.txt](evidence/recovery-drill.txt).
 
 ## Kết luận vận hành sáng mai
 
