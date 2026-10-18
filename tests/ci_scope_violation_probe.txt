@@ -1,0 +1,1 @@
+Intentional disposable out-of-scope negative probe; must fail CI.
