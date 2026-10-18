@@ -1,0 +1,147 @@
+{
+  "full_acceptance": false,
+  "phase": "PRE_SETUP_DELTA_IN_PROGRESS",
+  "gates": [
+    {
+      "id": "QA-01",
+      "name": "Source & Migration",
+      "status": "PASS",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Baseline additive migration verified; new request migration tests PASS",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-02",
+      "name": "Security",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Partial local RBAC; protected resources/principal incomplete",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-03",
+      "name": "Evidence",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Adversarial local verification PASS; genuine hosted trust absent",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-04",
+      "name": "Worksharing",
+      "status": "PASS",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Local scope/resources/fencing tests; no OS isolation claim",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-05",
+      "name": "Dispatcher",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Local concurrency/ACK/DAG passes; durable transport timeout/retries incomplete",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-06",
+      "name": "Git Integration",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Disposable integration verified; protected Central backend/CI missing",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-07",
+      "name": "Feedback",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Fixture rework verified; actual Anti QA loop NOT_EXECUTED",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-08",
+      "name": "Recovery",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Coordinator/process/SQLite local PASS; full Windows restart NOT_EXECUTED",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-09",
+      "name": "Runtime & UI",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Windows browser/local MCP PASS; two real sessions missing",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    },
+    {
+      "id": "QA-10",
+      "name": "Final Acceptance",
+      "status": "BLOCKED",
+      "scope": "Master Scope v1.0 full gate",
+      "reason": "Full real mission/owner-authorized protected integration not demonstrated",
+      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "evidence": [
+        "../qa/final-regression.txt",
+        "MASTER_FEATURE_CROSSWALK.md"
+      ],
+      "not_executed_is_pass": false
+    }
+  ],
+  "delta_regression": {
+    "status": "PASS",
+    "executed_command": "C:/KTOOL/CommandCenter/venv/Scripts/python.exe -m unittest discover -s tests -v",
+    "tests": 155,
+    "elapsed_seconds": 114.168,
+    "evidence": "full-regression.txt",
+    "execution_environment": "LOCAL_WINDOWS_SHARED_PRINCIPAL",
+    "production_provenance": "NOT_ESTABLISHED",
+    "code_sha": "7f6629f647c9007e582382271134afc535a750af",
+    "binding": "POST_RUN_LOCAL_CONTENT_BINDING_NOT_TRUSTED_ATTESTATION"
+  }
+}
