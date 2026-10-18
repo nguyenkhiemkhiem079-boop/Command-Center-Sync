@@ -38,7 +38,7 @@ def handler_factory(store: Registry, hashes: dict):
         if op=='queue_wave':return c.queue_wave(role,args['mission'],args['wave'],args['assignments'],args.get('parent'))
         if op=='dispatch':return c.dispatch(role,args.get('capabilities'))
         if op=='steer':return c.steer(role,args['mission'],args['assignment'],args['target'],args['context_version'],args['instruction'])
-        if op=='human_request':return c.human_request(role,args['mission'],args['kind'],args['body'],args.get('assignment'))
+        if op=='human_request':return c.human_request(role,args['mission'],args['kind'],args['body'],args.get('assignment'),args.get('deadline'))
         raise ValueError('unknown control op')
 
     sessions = {}

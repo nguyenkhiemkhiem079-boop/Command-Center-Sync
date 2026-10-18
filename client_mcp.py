@@ -249,9 +249,9 @@ def steer(mission:str,assignment:str,target:str,context_version:str,instruction:
     return _call('steer',mission=mission,assignment=assignment,target=target,context_version=context_version,instruction=instruction)
 
 @mcp.tool()
-def human_request(mission:str,kind:str,body:str,assignment:str|None=None)->dict:
+def human_request(mission:str,kind:str,body:str,assignment:str|None=None,deadline:str|None=None)->dict:
     """Record input/direction/review/approval request; never grants approval."""
-    return _call('human_request',mission=mission,kind=kind,body=body,assignment=assignment)
+    return _call('human_request',mission=mission,kind=kind,body=body,assignment=assignment,deadline=deadline)
 
 if __name__=='__main__':
     main()

@@ -59,6 +59,19 @@ class ControlStore:
             INSERT OR IGNORE INTO cc_meta VALUES('mode','NORMAL');
             INSERT OR IGNORE INTO cc_meta VALUES('epoch','0');
             ''')
+            # Additive, serialized migration; retain every existing request and token store.
+            db.execute('BEGIN IMMEDIATE')
+            try:
+                version=db.execute("SELECT value FROM cc_meta WHERE key='human_requests_schema_version'").fetchone()
+                if version and int(version[0])>2: raise ValueError('NEWER_HUMAN_REQUEST_SCHEMA')
+                columns={r['name'] for r in db.execute('PRAGMA table_info(cc_human_requests)')}
+                for name in ('deadline','decided_at'):
+                    if name not in columns: db.execute('ALTER TABLE cc_human_requests ADD COLUMN '+name+' TEXT')
+                db.execute("INSERT OR REPLACE INTO cc_meta VALUES('human_requests_schema_version','2')")
+                db.execute('COMMIT')
+            except Exception:
+                db.execute('ROLLBACK');raise
+
 
     @contextmanager
     def connection(self):
@@ -412,9 +425,18 @@ class ControlStore:
             db.execute("UPDATE cc_steering SET status='ACKNOWLEDGED',acknowledged=? WHERE id=?",(stamp(),steering))
             self.event(db,actor,'STEERING_ACKNOWLEDGED',steering,{'target':target})
 
-    def human_request(self,actor,mission,kind,body,assignment=None):
+    def human_request(self,actor,mission,kind,body,assignment=None,deadline=None):
         require(actor,('CODEX','ANTI-01','ANTI-02'))
-        if kind not in ('input','direction','review','approval'): raise ValueError('typed request required')
+        if kind not in ('input','direction','review','approval','INPUT_REQUIRED','DIRECTION_REQUIRED',
+                        'PERMISSION_REQUIRED','CONTRACT_CHANGE','MERGE_APPROVAL','RELEASE_APPROVAL'):
+            raise ValueError('typed request required')
+        if deadline is not None:
+            if not isinstance(deadline,str): raise ValueError('timezone-aware deadline required')
+            try: parsed=datetime.fromisoformat(deadline.replace('Z','+00:00'))
+            except ValueError: raise ValueError('timezone-aware deadline required') from None
+            if parsed.tzinfo is None: raise ValueError('timezone-aware deadline required')
+            if parsed<=datetime.now(timezone.utc): raise ValueError('future deadline required')
+            deadline=parsed.astimezone(timezone.utc).isoformat()
         if not isinstance(body,str) or not 1<=len(body)<=4000: raise ValueError('request body required')
         with self.transaction() as db:
             self.row(db,'cc_missions',mission)
@@ -422,8 +444,10 @@ class ControlStore:
                 t=self.row(db,'cc_assignments',assignment);require(actor,('CODEX',t['owner']))
                 if t['mission']!=mission: raise Denied('MISSION_MISMATCH')
             elif actor!='CODEX': raise Denied('ASSIGNMENT_REQUIRED')
-            h=digest({'mission':mission,'assignment':assignment,'kind':kind,'body':body})
-            db.execute('INSERT OR IGNORE INTO cc_human_requests(id,mission,assignment,target,kind,body,created) VALUES(?,?,?,?,?,?,?)',(h,mission,assignment,'OWNER',kind,body,stamp()))
+            identity={'mission':mission,'assignment':assignment,'kind':kind,'body':body}
+            if deadline is not None: identity['deadline']=deadline
+            h=digest(identity)
+            db.execute('INSERT OR IGNORE INTO cc_human_requests(id,mission,assignment,target,kind,body,created,deadline) VALUES(?,?,?,?,?,?,?,?)',(h,mission,assignment,'OWNER',kind,body,stamp(),deadline))
             self.event(db,actor,'HUMAN_REQUEST',h,{'kind':kind,'privilege_granted':False})
             return h
 
@@ -433,7 +457,9 @@ class ControlStore:
         with self.transaction() as db:
             r=self.row(db,'cc_human_requests',request)
             if r['status']!='PENDING': raise Denied('REQUEST_ALREADY_RESOLVED')
-            db.execute("UPDATE cc_human_requests SET status='RESOLVED',response=? WHERE id=?",(encoded(response),request))
+            if r['deadline'] and datetime.fromisoformat(r['deadline'])<=datetime.now(timezone.utc):
+                raise Denied('REQUEST_EXPIRED')
+            db.execute("UPDATE cc_human_requests SET status='RESOLVED',response=?,decided_at=? WHERE id=?",(encoded(response),stamp(),request))
             self.event(db,actor,'HUMAN_REQUEST_RESOLVED',request,{'privilege_granted':False})
 
     def set_mode(self,actor,mode):
