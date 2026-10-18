@@ -17,6 +17,25 @@ WEB = Path(__file__).resolve().with_name('web')
 SESSION_TTL = 8*3600
 
 
+class SupervisedHTTPServer(ThreadingHTTPServer):
+    """Periodic deterministic controller summaries; no model calls or dispatch."""
+    def __init__(self,address,handler,control,interval=10):
+        self.control=control;self.supervisor_interval=interval;self._next_supervisor=0
+        self.supervisor_last_success=None;self.supervisor_error=None
+        super().__init__(address,handler)
+
+    def service_actions(self):
+        if time.monotonic()<self._next_supervisor:return
+        self._next_supervisor=time.monotonic()+self.supervisor_interval
+        try:
+            self.control.supervisor_tick('CONTROLLER')
+            self.supervisor_last_success=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+            self.supervisor_error=None
+        except Exception:
+            self.supervisor_error='SUPERVISOR_TICK_FAILED'
+            print('SUPERVISOR_TICK_FAILED: no automatic approval or resume performed',flush=True)
+
+
 def handler_factory(store: Registry, hashes: dict):
     def controller():
         from orchestration import ControlStore
@@ -125,7 +144,7 @@ def handler_factory(store: Registry, hashes: dict):
             path=urlsplit(self.path).path
             if path=='/health':
                 return self.respond(200,{'status':'UP','dashboard':'/ui',
-                                         'note':'HTTP registry; MCP is stdio client_mcp.py'})
+                                         'note':'HTTP registry; MCP is stdio client_mcp.py','supervisor_last_success':getattr(self.server,'supervisor_last_success',None),'supervisor_error':getattr(self.server,'supervisor_error',None)})
             if path in ('/','/ui','/ui/'):
                 return self.asset('index.html','text/html; charset=utf-8')
             if path=='/ui/dashboard.css':return self.asset('dashboard.css','text/css; charset=utf-8')
@@ -326,7 +345,7 @@ def main():
         control.set_mode('CODEX','EMERGENCY_STOP' if store.control_status('CODEX')['mode']=='EMERGENCY_STOP' else 'RECOVERY_REQUIRED')
     print('Orchestration recovery:',control_startup,flush=True)
     print('Recovery reconciliation:',startup,flush=True)
-    httpd=ThreadingHTTPServer(('127.0.0.1',args.port),handler_factory(store,roles))
+    httpd=SupervisedHTTPServer(('127.0.0.1',args.port),handler_factory(store,roles),control)
     print(f'K-TOOL Task Registry & Dashboard: http://127.0.0.1:{args.port}/ui',flush=True)
     print('MCP adapter is a separate stdio process. CTRL+C stops this server.',flush=True)
     try:httpd.serve_forever(poll_interval=0.25)
