@@ -21,7 +21,7 @@ Validated source commit: `1b195cc3a44cafa754f7653284cd43297bec240d` (pushed). Re
 
 `npm audit --audit-level=high`: 0 vulnerabilities. `npm ls --all --depth=1` confirmed pinned Three.js 0.186.1 and Vite 8.3.4; reported unmet packages are optional dependencies not used by this build.
 
-Hosted `Trusted base scope policy` check: **FAIL closed / PR quarantined** at the tested head SHA. The trusted-base workflow checked out `127607f05f98a53ad7447dfa2f24721554ed6361`, required `.github/scope-policy.json`, then the verifier returned `OWNER_APPROVED_BASE_POLICY_REQUIRED` and `quarantine=true`. This is a missing approved policy prerequisite, not an Agent World path violation. No policy or branch-protection change was included. See `hosted-scope-check.json` and the linked GitHub run.
+Hosted `Trusted base scope policy` check: **FAIL closed / PR quarantined** at head `5d555059e6f70b346264acdf5d55b5312de43084` (run `39154581560`, job `117755042235`). The trusted-base workflow checked out `127607f05f98a53ad7447dfa2f24721554ed6361`, required `.github/scope-policy.json`, then the verifier returned `OWNER_APPROVED_BASE_POLICY_REQUIRED` and `quarantine=true`. The same failure was independently reproduced on the code commit `1b195cc3a44cafa754f7653284cd43297bec240d`. This is a missing approved policy prerequisite, not an Agent World path violation. No policy or branch-protection change was included. See `hosted-scope-check.json` and the linked GitHub run.
 
 ## Browser evidence
 

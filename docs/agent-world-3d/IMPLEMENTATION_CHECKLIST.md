@@ -13,4 +13,5 @@
 | Production deployment at 8876 | NOT_EXECUTED | Explicitly out of scope; installed service unchanged |
 | Real Antigravity sessions / Teamwork | BLOCKED | Runtime API returns UNKNOWN; no real session evidence |
 | RTX 3060 Ti performance / memory | NOT_EXECUTED | Browser used headless SwiftShader; no target GPU measurement |
-| PR / merge | NOT_EXECUTED | No merge authorization; PR creation depends on available GitHub auth tooling |
+| PR review | PASS (opened) | PR #4 is open against `feature/full-fix-e2e-acceptance`; hosted scope policy remains failed closed |
+| Merge / deployment | NOT_EXECUTED | No merge or production deployment was requested or performed |
