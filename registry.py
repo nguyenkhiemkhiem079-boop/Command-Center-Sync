@@ -159,6 +159,10 @@ class Registry:
         return db.execute("SELECT value FROM control WHERE key='mode'").fetchone()['value']
 
     def _allow_activity(self, db):
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cc_meta'").fetchone():
+            shared=db.execute("SELECT value FROM cc_meta WHERE key='mode'").fetchone()
+            if shared and shared['value'] in ('EMERGENCY_STOP','RECOVERY_REQUIRED'):
+                raise Denied('CONTROL_PLANE_NOT_NORMAL: '+shared['value'],423)
         if self._mode(db) != 'NORMAL':
             raise Denied('CONTROL_PLANE_NOT_NORMAL: ' + self._mode(db), 423)
 
@@ -178,6 +182,10 @@ class Registry:
             raise ValueError('meaningful reason required')
         with self.transaction() as db:
             db.execute("UPDATE control SET value='EMERGENCY_STOP' WHERE key='mode'")
+            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cc_meta'").fetchone():
+                db.execute("UPDATE cc_meta SET value='EMERGENCY_STOP' WHERE key='mode'")
+                db.execute("UPDATE cc_assignments SET status='FROZEN' WHERE id IN (SELECT assignment FROM cc_locks)")
+                db.execute("UPDATE cc_locks SET state='FROZEN'")
             db.execute("UPDATE locks SET state='FROZEN' WHERE state='ACTIVE'")
             db.execute("UPDATE tasks SET state='FROZEN',updated=? WHERE id IN (SELECT task_id FROM locks)", (utcnow(),))
             db.execute("INSERT INTO recovery_events(at,kind,detail) VALUES(?,?,?)",(utcnow(),'EMERGENCY_STOP',reason[:800]))
@@ -219,31 +227,12 @@ class Registry:
 
     def resume_control(self, actor, workers_stopped, backup_verified, operator_approval):
         self._require(actor,('CODEX',))
-        if workers_stopped is not True or backup_verified is not True or operator_approval != 'I_APPROVE_RECOVERY':
-            raise Denied('RECOVERY_GATE: verify processes stopped + backup + explicit approval',409)
-        with self.transaction() as db:
-            if self._mode(db)=='NORMAL': raise Denied('CONTROL_ALREADY_NORMAL')
-            db.execute("UPDATE control SET value='NORMAL' WHERE key='mode'")
-            self._audit(db,actor,'RESUME_CONTROL','','operator confirmations received; frozen tasks retained')
-        return {'mode':'NORMAL','frozen_locks_released':False,'task_resumption':'PER_TASK_REQUIRED'}
+        # Deprecated legacy route has no protected process/backup verifier bridge.
+        raise Denied('VERIFIED_PROCESS_PROOF_REQUIRED: legacy boolean recovery is disabled',409)
 
     def resume_frozen_task(self, actor, tid, owner, worker_stopped, checkpoint_verified):
         self._require(actor,('CODEX',))
-        if owner not in WORKERS or worker_stopped is not True or checkpoint_verified is not True:
-            raise Denied('RESUME_GATE: owner + worker_stopped + checkpoint_verified required')
-        with self.transaction() as db:
-            self._allow_activity(db)
-            t=self._task(db,tid)
-            old=db.execute('SELECT * FROM locks WHERE task_id=?',(tid,)).fetchone()
-            if t['state']!='FROZEN' or not old or old['state']!='FROZEN': raise Denied('TASK_NOT_FROZEN')
-            if old['owner']!=owner:raise Denied('NO_CROSS_ACCOUNT_AUTO_HANDOVER')
-            db.execute("UPDATE meta SET value=value+1 WHERE key='epoch'")
-            epoch=db.execute("SELECT value FROM meta WHERE key='epoch'").fetchone()['value']
-            db.execute("UPDATE locks SET fencing=?,state='ACTIVE' WHERE task_id=?",(epoch,tid))
-            db.execute('UPDATE resource_locks SET fencing=? WHERE task_id=?',(epoch,tid))
-            db.execute("UPDATE tasks SET fencing=?,state='RUNNING',self_qa_json=NULL,result_json=NULL,updated=? WHERE id=?",(epoch,utcnow(),tid))
-            self._audit(db,actor,'RESUME_FROZEN_TASK',tid,'new_fence='+str(epoch))
-        return {'task_id':tid,'owner':owner,'new_fencing':epoch,'old_fencing_invalid':True}
+        raise Denied('VERIFIED_PROCESS_PROOF_REQUIRED: use controller-owned process recovery',409)
 
     def register_local_qa(self, tid, qa_round, commit_sha, git_scope_pass,
                           clean_tree, changed_paths, build_exit, tests_exit, payload):
@@ -310,7 +299,8 @@ class Registry:
 
     def _integration(self):
         return {'antigravity_teamwork':'NOT_VERIFIED','codex_agent_runtime':'NOT_VERIFIED',
-                'windows_acl':'NOT_CONFIGURED','github_ci':'NOT_CONNECTED','revit_host':'NOT_EXECUTED',
+                'isolation_level':'LOGICAL_ONLY','role_separation':'ROLE_SEPARATION_LOGICAL_ONLY',
+                'windows_acl':'SHARED_WINDOWS_PRINCIPAL','github_ci':'NOT_CONNECTED','revit_host':'NOT_EXECUTED',
                 'lock_enforcement':'REGISTRY_ONLY','local_qa_runner':'AVAILABLE_NOT_ALWAYS_EXECUTED', 'disaster_recovery':'FAIL_CLOSED_ON_RESTART'}
 
     def dashboard_snapshot(self, actor):
@@ -380,6 +370,13 @@ class Registry:
             for resource in json.loads(t['exclusive_resources']):
                 existing=db.execute('SELECT task_id FROM resource_locks WHERE resource=?',(resource,)).fetchone()
                 if existing:raise Denied('CANT_EDIT_SHARED_RESOURCE: '+resource+' owned by '+existing['task_id'])
+            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cc_resource_locks'").fetchone():
+                for resource in json.loads(t['exclusive_resources']):
+                    if db.execute('SELECT 1 FROM cc_resource_locks WHERE resource=?',(resource,)).fetchone():
+                        raise Denied('CANT_EDIT_SHARED_RESOURCE: controller owns '+resource)
+            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cc_locks'").fetchone():
+                for lock in db.execute('SELECT scope FROM cc_locks'):
+                    if collide(t['scope'],lock['scope']): raise Denied('CANT_EDIT: controller scope ownership')
             # Pilot cap: each anti owns at most one unresolved task.
             if db.execute("SELECT 1 FROM tasks WHERE owner=? AND state IN ('RUNNING','SELF_QA_READY','FROZEN','SUBMITTED','REWORK_REQUIRED','CODE_REVIEWED')",(owner,)).fetchone():
                 raise Denied('AGENT_BUSY')
@@ -570,24 +567,9 @@ class Registry:
 
     def close_task(self, actor, tid, integration_sha, source_stopped):
         self._require(actor,('CODEX',))
-        if source_stopped is not True: raise Denied('SOURCE_NOT_CONFIRMED_STOPPED')
-        if not isinstance(integration_sha,str) or not SHA40.fullmatch(integration_sha):
-            raise ValueError('integration_sha must be a 40-hex Git commit')
-        with self.transaction() as db:
-            self._allow_activity(db)
-            t=self._task(db,tid)
-            if t['state']!='CODE_REVIEWED':raise Denied('CODE_REVIEW_NOT_PASSED')
-            res=json.loads(t['result_json'] or '{}')
-            ev=db.execute('''SELECT * FROM qa_evidence WHERE task_id=? AND qa_round=? AND commit_sha=? AND result='PASS' ORDER BY at DESC LIMIT 1''',(tid,t['qa_round'],res.get('commit_sha',''))).fetchone()
-            if not ev: raise Denied('INDEPENDENT_LOCAL_QA_EVIDENCE_REQUIRED_BEFORE_CLOSE')
-            # This is an operator assertion. It does not merge branches or verify live Windows processes.
-            db.execute("UPDATE tasks SET state='CLOSED',integration_sha=?,updated=? WHERE id=?",
-                       (integration_sha.lower(),utcnow(),tid))
-            db.execute('DELETE FROM locks WHERE task_id=?',(tid,))
-            db.execute('DELETE FROM resource_locks WHERE task_id=?',(tid,))
-            self._audit(db,actor,'CLOSE_AND_RELEASE',tid,integration_sha[:12])
-        return {'task_id':tid,'state':'CLOSED','lock_released':True,
-                'note':'Operator asserted source stopped + integration SHA; no automatic Git merge.'}
+        # Boolean stop assertions and arbitrary SHA strings are not integration proof.
+        # No protected legacy release bridge is configured; retain all locks.
+        raise Denied('VERIFIED_INTEGRATION_PROOF_REQUIRED: legacy release is disabled',409)
 
     def _qa_label(self, tid, qa_round):
         with self.connect() as db:

@@ -87,7 +87,7 @@ class HardeningTests(unittest.TestCase):
 
     def test_nonboolean_stop_confirmation_denied(self):
         for value in ('false', 'true', 1, [], None):
-            with self.subTest(value=value), self.assertRaisesRegex(Denied, 'SOURCE_NOT_CONFIRMED_STOPPED'):
+            with self.subTest(value=value), self.assertRaisesRegex(Denied, 'VERIFIED_INTEGRATION_PROOF_REQUIRED'):
                 self.db.close_task('CODEX', 'not-even-created', 'a' * 40, value)
 
 

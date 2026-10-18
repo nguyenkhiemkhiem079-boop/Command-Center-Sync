@@ -37,16 +37,16 @@ class TestRecovery(unittest.TestCase):
   self.assertEqual(out['frozen_active_locks'],1)
   with self.assertRaises(Denied):self.db.create_task('CODEX','B','B','mep','contract',self.sha)
   with self.assertRaises(Denied):self.db.checkpoint('ANTI-01','A',fence,'still running')
- def test_recovery_explicit_and_new_fence(self):
-  old=self.task('A','arch')
-  self.db.reconcile_startup()
-  with self.assertRaises(Denied):self.db.resume_control('CODEX',True,False,'I_APPROVE_RECOVERY')
-  self.db.resume_control('CODEX',True,True,'I_APPROVE_RECOVERY')
-  with self.assertRaises(Denied):self.db.resume_frozen_task('CODEX','A','ANTI-02',True,True)
-  out=self.db.resume_frozen_task('CODEX','A','ANTI-01',True,True)
-  self.assertNotEqual(old,out['new_fencing'])
-  with self.assertRaises(Denied):self.db.checkpoint('ANTI-01','A',old,'stale fence')
-  self.assertEqual(self.db.checkpoint('ANTI-01','A',out['new_fencing'],'new fence')['checkpoint'],'SAVED')
+ def test_legacy_boolean_recovery_is_blocked_and_locks_retained(self):
+  old=self.task('A','arch');self.db.reconcile_startup()
+  with self.assertRaisesRegex(Denied,'VERIFIED_PROCESS_PROOF_REQUIRED'):
+   self.db.resume_control('CODEX',True,True,'I_APPROVE_RECOVERY')
+  with self.assertRaisesRegex(Denied,'VERIFIED_PROCESS_PROOF_REQUIRED'):
+   self.db.resume_frozen_task('CODEX','A','ANTI-01',True,True)
+  self.assertEqual(self.db.get_task('CODEX','A')['state'],'FROZEN')
+  with self.db.connect() as db:
+   lock=db.execute("SELECT * FROM locks WHERE task_id='A'").fetchone()
+   self.assertEqual(lock['state'],'FROZEN');self.assertEqual(lock['fencing'],old)
  def test_quota_exhaustion_freezes_only_owner(self):
   fa=self.task('A','arch')
   fb=self.task('B','mep','ANTI-02')
@@ -105,7 +105,8 @@ class TestRecovery(unittest.TestCase):
   good=assess(self.root/'registry.db','GIT',repo,profile)
   self.assertEqual(good['result'],'PASS')
   self.db.review_task('CODEX','GIT','PASS_CODE_REVIEW','Verified diff build and tests from QA runner','qa/review.json',True,True)
-  self.db.close_task('CODEX','GIT',head,True)
-  self.assertEqual(self.db.get_task('CODEX','GIT')['state'],'CLOSED')
+  with self.assertRaisesRegex(Denied,'VERIFIED_INTEGRATION_PROOF_REQUIRED'):
+   self.db.close_task('CODEX','GIT',head,True)
+  self.assertEqual(self.db.get_task('CODEX','GIT')['state'],'CODE_REVIEWED')
 
 if __name__=='__main__':unittest.main()

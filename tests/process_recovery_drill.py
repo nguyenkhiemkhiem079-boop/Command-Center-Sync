@@ -95,20 +95,19 @@ def run():
             with closing(sqlite3.connect(snapshot)) as conn:
                 check('backup retains both tasks',conn.execute('select count(*) from tasks').fetchone()[0]==2)
             check('unconfirmed recovery denied',rpc('CODEX','resume_control',workers_stopped=True,backup_verified=False,operator_approval='I_APPROVE_RECOVERY')[0]==409)
-            check('sandbox recovery approved',rpc('CODEX','resume_control',workers_stopped=True,backup_verified=True,operator_approval='I_APPROVE_RECOVERY')[0]==200)
+            check('legacy boolean recovery remains blocked',rpc('CODEX','resume_control',workers_stopped=True,backup_verified=True,operator_approval='I_APPROVE_RECOVERY')[0]==409)
             check('cross-account handover denied',rpc('CODEX','resume_frozen_task',tid='DRILL-A',owner='ANTI-02',worker_stopped=True,checkpoint_verified=True)[0]==409)
-            code,result=rpc('CODEX','resume_frozen_task',tid='DRILL-A',owner='ANTI-01',worker_stopped=True,checkpoint_verified=True)
-            new=result['result']['new_fencing']
-            check('new fencing after recovery',code==200 and new!=old)
-            check('old fencing denied',rpc('ANTI-01','checkpoint',tid='DRILL-A',fencing=old,message='stale')[0]==403)
-            check('new fencing works',rpc('ANTI-01','checkpoint',tid='DRILL-A',fencing=new,message='safe resume')[0]==200)
+            check('legacy task resume requires verified stop',rpc('CODEX','resume_frozen_task',tid='DRILL-A',owner='ANTI-01',worker_stopped=True,checkpoint_verified=True)[0]==409)
+            check('old fencing denied while frozen',rpc('ANTI-01','checkpoint',tid='DRILL-A',fencing=old,message='stale')[0] in (403,423))
             check('emergency stop enforced',rpc('CODEX','emergency_stop',reason='Disposable emergency stop test')[1]['result']['mode']=='EMERGENCY_STOP')
             check('new work denied on emergency',rpc('CODEX','create_task',tid='STOPPED',title='Stopped',scope='other',contract='deny',base_sha=sha)[0]==423)
-            check('writes denied on emergency',rpc('ANTI-01','checkpoint',tid='DRILL-A',fencing=new,message='deny')[0]!=200)
+            check('writes denied on emergency',rpc('ANTI-01','checkpoint',tid='DRILL-A',fencing=old,message='deny')[0]!=200)
         finally:
             if process.poll() is None:
                 process.kill(); process.wait(timeout=10)
     return {'status':'PASS','checks':checks,'scope':'disposable process + HTTP + SQLite drill',
+            'legacy_safe_resume':'BLOCKED_VERIFIED_PROCESS_PROOF_REQUIRED',
+            'new_controller_safe_resume':'covered by test_orchestration/test_recovery_manager',
             'real_antigravity':'NOT_EXECUTED','quota':'SIMULATED_REGISTRY_EVENT','power_loss':'NOT_EXECUTED'}
 
 if __name__=='__main__':

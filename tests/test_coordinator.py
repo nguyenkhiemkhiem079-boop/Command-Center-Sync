@@ -146,8 +146,8 @@ class TestDualDev(unittest.TestCase):
         self.assertEqual(self.codexpass('A')[0],200)
         self.assertEqual(self.call('CODEX','close_task',tid='A',integration_sha='c'*40,source_stopped=False)[0],409)
         self.assertEqual(self.call('ANTI-01','close_task',tid='A',integration_sha='c'*40,source_stopped=True)[0],403)
-        self.assertEqual(self.call('CODEX','close_task',tid='A',integration_sha='c'*40,source_stopped=True)[0],200)
-        self.create('B','arch');self.assertEqual(self.ass('B','ANTI-02')[0],200)
+        self.assertEqual(self.call('CODEX','close_task',tid='A',integration_sha='c'*40,source_stopped=True)[0],409)
+        self.create('B','arch');self.assertEqual(self.ass('B','ANTI-02')[0],409)
     def test_freeze_keeps_lock_and_blocks_worker(self):
         self.create('A','architectural/door');tok=self.ass('A','ANTI-01')[1]['result']['fencing']
         self.call('CODEX','freeze',tid='A',reason='pause for manual review')

@@ -45,9 +45,9 @@ class TestRecoveryHttp(unittest.TestCase):
   self.assertEqual(self.req('/ui/api/snapshot')[1]['result']['control']['mode'],'EMERGENCY_STOP')
   self.assertEqual(self.req('/ui/api/create',{'tid':'B','title':'B','scope':'mep','contract':'task','base_sha':'a'*40})[0],423)
   self.assertEqual(self.req('/ui/api/resume-control',{'workers_stopped':False,'backup_verified':True,'operator_approval':'I_APPROVE_RECOVERY'})[0],409)
-  self.assertEqual(self.req('/ui/api/resume-control',{'workers_stopped':True,'backup_verified':True,'operator_approval':'I_APPROVE_RECOVERY'})[0],200)
-  self.assertEqual(self.req('/ui/api/snapshot')[1]['result']['control']['mode'],'NORMAL')
-  self.assertEqual(self.req('/ui/api/resume-task',{'tid':'A','owner':'ANTI-01','worker_stopped':True,'checkpoint_verified':True})[0],200)
+  self.assertEqual(self.req('/ui/api/resume-control',{'workers_stopped':True,'backup_verified':True,'operator_approval':'I_APPROVE_RECOVERY'})[0],409)
+  self.assertEqual(self.req('/ui/api/snapshot')[1]['result']['control']['mode'],'EMERGENCY_STOP')
+  self.assertEqual(self.req('/ui/api/resume-task',{'tid':'A','owner':'ANTI-01','worker_stopped':True,'checkpoint_verified':True})[0],409)
  def test_worker_cannot_admin_over_mcp(self):
   for op in ('emergency_stop','resume_control','stale_sweep','qa_evidence'):
    args={'reason':'stop due to failure','workers_stopped':True,'backup_verified':True,'operator_approval':'I_APPROVE_RECOVERY','tid':'A'}
