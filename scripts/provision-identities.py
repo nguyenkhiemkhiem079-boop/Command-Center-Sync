@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 
 
 def provision(root, appdata):
@@ -24,8 +25,8 @@ def provision(root, appdata):
             raise RuntimeError('Existing credential does not match registry role')
         directory=appdata/'KTOOLMCP/identities'/role
         directory.mkdir(parents=True,exist_ok=True)
-        result=subprocess.run(['icacls',str(directory),'/inheritance:r','/grant:r',
-                               principal+':(OI)(CI)F','SYSTEM:(OI)(CI)F'],capture_output=True)
+        protect=Path(__file__).with_name('protect-private-path.ps1')
+        result=subprocess.run([shutil.which('pwsh') or 'powershell','-NoProfile','-File',str(protect),'-LiteralPath',str(directory)],capture_output=True)
         if result.returncode: raise RuntimeError('Identity ACL failed')
         target=directory/'client_token.txt'
         if target.exists():
@@ -35,6 +36,8 @@ def provision(root, appdata):
         else:
             with target.open('x',encoding='utf-8') as output: output.write(token)
             action='COPIED_EXISTING'
+        result=subprocess.run([shutil.which('pwsh') or 'powershell','-NoProfile','-File',str(protect),'-LiteralPath',str(target)],capture_output=True)
+        if result.returncode: raise RuntimeError('Credential file ACL failed')
         outputs.append({'identity':role,'credential_reference':str(target),'action':action,'backend_hash_matches':True})
     return {'isolation_level':'LOGICAL_ONLY','credentials':outputs,'rotation':False,'registry_overwritten':False}
 

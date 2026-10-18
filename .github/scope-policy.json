@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "repository": "nguyenkhiemkhiem079-boop/Command-Center-Sync",
+  "approval_state": "PENDING_OWNER_APPROVAL",
+  "protected_paths": [
+    ".github",
+    "tests",
+    "registry.py",
+    "server.py",
+    "governance.py",
+    "trust_vault.py",
+    "shared-core"
+  ],
+  "assignments": {
+    "CI-PILOT": {
+      "scope": "ci-pilot",
+      "allowed_paths": [
+        "ci-pilot"
+      ],
+      "resource_locks": [],
+      "required_resource_locks": []
+    }
+  }
+}

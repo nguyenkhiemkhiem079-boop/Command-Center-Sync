@@ -1,0 +1,778 @@
+{
+  "head": "1f0f5e4a72e4bc028a8d2194fc00f82d3b391d5c",
+  "worktree_before_audit": "CLEAN",
+  "remote_heads": "e80e26ff1ec4f09505a4608192e195d52e80f503\trefs/heads/feature/command-center-four-wave-oms\n1f0f5e4a72e4bc028a8d2194fc00f82d3b391d5c\trefs/heads/feature/master-scope-v1-governance",
+  "deployment": {
+    "source_sha": "c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d",
+    "dev_branch": "feature/master-scope-v1-governance",
+    "owner_authorization": "User: Triển khai lun đi, kh cần đợi 19:55",
+    "backup_directory": "C:\\KTOOL\\CommandCenter\\deployments\\20261018-DEPLOY-c377d10",
+    "no_merge_or_release": true
+  },
+  "files": [
+    {
+      "file": ".github/workflows/scope-gate.yml",
+      "source_sha256": "e6722868472d2a97a4e3d99f79e4114f9aef0b193cbcc4f98080c00f7fe10005",
+      "installed_sha256": "b3def2f4f078dfd5666afac55afaeceebbea38ba3ed6ecbf4af691ff41f00453",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": ".gitignore",
+      "source_sha256": "fce58ee22c313813d3e4533267579fd522cf25899f39bba8361c2e9dfb38df73",
+      "installed_sha256": "336b94c6d755b4b1c05fa80098239c9edbbb159944a7cee45bf82f120406b540",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "01_SETUP.bat",
+      "source_sha256": "129f5460ac083b78f5bd1f9375028a2263637e802ec6a15a98eab6038c50ec0e",
+      "installed_sha256": "4155501901f409648dc1e6fbe8adde91ab8b85ba34eacf8c5ed072403a0bf03c",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "02_START_DASHBOARD.bat",
+      "source_sha256": "715700ed22f2d398d4877b9e273a246a8872332820f9adbcc5c2dc4f6020bd86",
+      "installed_sha256": "a3611f0b9cae878d152f093fb0dd5e389e1435e0dac4745e4cedb2922e0a7001",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "03_TEST_REGISTRY.bat",
+      "source_sha256": "59112660b60bbbbcc49f519d9cac821f7ee1c34fb037fb4ff95debe3efff9ddb",
+      "installed_sha256": "fa97f611b0f21c401e6a4482a23cf9dae0ba8062c5aa3210601648eb5bcb8272",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "CHANGELOG_LOCAL.md",
+      "source_sha256": "0a479bfeda682cfe674e3f4c29153b54d7d208062b4cc04268eb15824b072da0",
+      "installed_sha256": "24765956ab8cbdfa9fe649eab6e607f8a8da4f14221ee6de6da2a09ca77a5827",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "README_DASHBOARD_VI.md",
+      "source_sha256": "43ffe35161453cf0105835f3b4654d1be651160fd53ea76d1f7a62fb01428d3d",
+      "installed_sha256": "e088495aaa068d39b8bd12e8c26060c6d3728bb8111c901342954d3784feed53",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "README_V07.md",
+      "source_sha256": "acb9fcf8aeb260a5e3c39f4c86d5bf7dbd3d8165ab8e503bf95d62b8ddb4f219",
+      "installed_sha256": "636a9e639754c8959411c998a0785b82509d706c1bbac68b3ae6ff2ff0f3b398",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "README_VI.md",
+      "source_sha256": "7de424058724e1b64282f3310d78d60611723cf7c0717f7a6e5131fb60967b84",
+      "installed_sha256": "a44d22721b123dd0a370ca4ee8df81ad401dcc513368458b0baf5db29ff375e6",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "SHA256_MANIFEST.json",
+      "source_sha256": "548d36bbcf86f841300f838a51386148ac4a3242d48dd9e82a4c430ea2d38c95",
+      "installed_sha256": "4071b87f3dc40f56bc40278c7f89cf7477f49c87a77efdd94340d5aed55af849",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "START-HERE-DASHBOARD.txt",
+      "source_sha256": "56fb91a6235e4787478149f479ebb2147f90b5d9f12694a3fd1360213b95284d",
+      "installed_sha256": "8105bf1a56714fb28751e63a1aba802e3d05b001233914390d265b34a9ee9b3c",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "START-HERE.txt",
+      "source_sha256": "56fb91a6235e4787478149f479ebb2147f90b5d9f12694a3fd1360213b95284d",
+      "installed_sha256": "8105bf1a56714fb28751e63a1aba802e3d05b001233914390d265b34a9ee9b3c",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "UPGRADE_EXISTING_MCP.ps1",
+      "source_sha256": "41be10adccb1f702babd9db28ac81d5541c73b7ab0a18ccc617384ae73c9686c",
+      "installed_sha256": "0d4e6380d0f290901da26390ed9afa879a0b6565a3cacd9f13ee608e15e9979d",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "VERSION",
+      "source_sha256": "6abbeb9312737c1730f0546f4bf94b7a5d3449525150d2bdf3c67a987449d242",
+      "installed_sha256": "ef47b808ba662070827b63eb876afa10030a5624eb0d360c0fc58a4a7a208a16",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "anti_runtime.py",
+      "source_sha256": "31fa035f7833fba7f0bff385c13dbf233644fdb1c838d99ec229578000c362e5",
+      "installed_sha256": "98d8768e1160d74cdbcc62a210af152ce89abfe078c739e78b3693fd1ec706a8",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "backup_registry.py",
+      "source_sha256": "2fe50581fcad30b96b7f74d34e96be93e844fa2502047df86be662580a271d70",
+      "installed_sha256": "3821d2602a3738e5d0c04ba8bbef0076aec5fad34cb8862a809d15b45ec72aa6",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "bootstrap.py",
+      "source_sha256": "ed3cb7abd3992d8a6c7f91c27f91973ff32016513d96701832190f1157fe6918",
+      "installed_sha256": "eb8b7b63589eda9bb49fda577f7f25e2907acf3a0966f2a2d72c913290ff94bc",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "ci_scope_gate.py",
+      "source_sha256": "b62d695bc1a35c73bcb2f6d8f5c76f09115825331334fbcfb2353cb47f037496",
+      "installed_sha256": "b62d695bc1a35c73bcb2f6d8f5c76f09115825331334fbcfb2353cb47f037496",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "client_mcp.py",
+      "source_sha256": "29ea2d1a0399377117637ee33c9c17e5f9b8b57c57d6577178bd4829e326841c",
+      "installed_sha256": "29ea2d1a0399377117637ee33c9c17e5f9b8b57c57d6577178bd4829e326841c",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "clients/anti_01.py",
+      "source_sha256": "4d007dd3539e1d0d23078467c051d5c55f164d8c4da7535c3958c1b88816fc0e",
+      "installed_sha256": "09b0129cab6ed42b3eb03452bf2a81e3dc19c681b975ea6a70df0b39fdcb745c",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "clients/anti_02.py",
+      "source_sha256": "9537f5f2280f1310d80eba0a07978be892506c01182447818d9165bfaba76e1c",
+      "installed_sha256": "a14190d59fa24c42b38b84d2ecdf41c3e02a6e308553a3de64767fe5a1269559",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "clients/codex.py",
+      "source_sha256": "8f1bdcf6ea335dd5f1b0ec64c157a8abc5a960f06b06ab2ae1e83dc146bde12a",
+      "installed_sha256": "75921f43f885431c233b5acbcb9d0d0292b97cf89947a19a3c4905ba0baa11e4",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "config/qa_profile.example.json",
+      "source_sha256": "1e9dc259bda1a7f001ff0d600ffa7b3d78e9c1ac0efa59a00ffdfcaacf2848a8",
+      "installed_sha256": "2b956014e005d9df95d1031330b67e9f16bf167ca02586990edc65c04eef7102",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/BAO_CAO_KY_THUAT_VI.md",
+      "source_sha256": "0846e41d1f94624cd22715f31ef7860353ec80575c73e079f37ae3d1c4d91380",
+      "installed_sha256": "0846e41d1f94624cd22715f31ef7860353ec80575c73e079f37ae3d1c4d91380",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/CLIENT_IDENTITIES_V07.md",
+      "source_sha256": "f777fcc5a13deda6e43a2924d57070248ce577a2659107f22b16147ec33ae474",
+      "installed_sha256": "987f44fcafc0c639dc54d65c31399567053dac18c67bec150c92af4445daa08b",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/CODEX_RELIABILITY_RECOVERY_V06.md",
+      "source_sha256": "c1f4bb380a41d3440bdb01f3dfc8dcbe3efeadd9d8fdd27b9773dbb1673e8ff9",
+      "installed_sha256": "2c150671aac8aead55d4147728aa4ba110716e2356699ffc0e6dd1c720f8d010",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/CODEX_SUPERVISOR_DUAL_DEV.md",
+      "source_sha256": "07289991d3885585bdf8ffcbb7def717a078fec0df14a23d713558a80b929d61",
+      "installed_sha256": "0a71e69a26359bf7100cebb64e61344921bc8fb695ebfcf06ac77b8a73aa8594",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/CODEX_WORKSHARING_QA_LOOP_V05.md",
+      "source_sha256": "e02052d51e6facb6b0cab51242642de993100abce6388b499eb7bb43f61d63c7",
+      "installed_sha256": "5b00fa3fd9408bdeffb94d88cccd0982ec8abdfac9c357c06e63f5de1e3a427c",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/LOCAL_HANDOVER_VI.md",
+      "source_sha256": "63aca0075428850f3fb24504f919b759afe950b5d5c653d1f66b41afeced760c",
+      "installed_sha256": "c611c226ceb0aa7c18abac7fb6549f1bb82951aa1fecb2c4c40237953660c1df",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/PILOT_TWO_TEAMWORK_SESSIONS.md",
+      "source_sha256": "d13c44a65d639467ef430ec26ea0435bf92d886928dda65925d740d6d29d5e3e",
+      "installed_sha256": "9427c38c4ed25a4413681382ecf8b5937cb6027980de4b8d13d9cfcae6f7393b",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/RELIABILITY_ACCEPTANCE_MATRIX.md",
+      "source_sha256": "c37912a5bb7785521288401cf559e20cb64fea41672697b4506fd78b627f1b5a",
+      "installed_sha256": "a59ae908e59e7ebe96418a97f2e0d985e87797a77375b51ed740954ac8247e2b",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/RESET.md",
+      "source_sha256": "74f49382bb9fdeca63f2ea8666213f50042f0d029bcb677f0dc6e9b6f39025f3",
+      "installed_sha256": "68a9f669a754f4c8aca2efe83a6583f474156810bfe4208059b102688fe34fd7",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/SECURITY_AND_NEXT_STEPS.md",
+      "source_sha256": "7db7d4b26241685f663841c0e8c22acd9fcebacf97330f0c82872a08175ea661",
+      "installed_sha256": "f287c9d495c4aeb805e72c0087ff835abbd99166350f1964b9b0f4c823e2d66a",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/SINGLE_WINDOWS_V07.md",
+      "source_sha256": "1cda1c4fc588053683c94fcaad2155fc59ad56067f4d103bebeb4f51e5b741c0",
+      "installed_sha256": "0fa6c427c2ed46cd9ca9320965713452466949cd2e46188902162d24c4df0436",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/SUPERVISED_MANUAL_LAUNCH_VI.md",
+      "source_sha256": "3a74de8d5fdb703b18b7665ace4ca2a7b3e6fab283e303d0df41127489b62a63",
+      "installed_sha256": "3a74de8d5fdb703b18b7665ace4ca2a7b3e6fab283e303d0df41127489b62a63",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/TRUST_TRANSACTION_LIMITS.md",
+      "source_sha256": "3a4143f3404c10612ea175b3cfdad0475673d09b0dafcacfbc4ab39bcf205e2d",
+      "installed_sha256": "8006119d0a3c19311bece5c31499e5c1447fc15a065fabf71954c66720b73ee6",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/AGENT_RUNTIME_CAPABILITY_MATRIX.md",
+      "source_sha256": "f3cb9e166d9f041c1f8c92a1bb3f507aee67f759c8d6ae353bce4dc92c9c9058",
+      "installed_sha256": "f3cb9e166d9f041c1f8c92a1bb3f507aee67f759c8d6ae353bce4dc92c9c9058",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/CODEX_FAILOVER_AND_RECOVERY_REPORT.md",
+      "source_sha256": "d19d8b499d2682db4afe60bcb207d0ab209535a40d7403a35d13a4118553c1c3",
+      "installed_sha256": "d19d8b499d2682db4afe60bcb207d0ab209535a40d7403a35d13a4118553c1c3",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/COMMAND_CENTER_ARCHITECTURE_V2.md",
+      "source_sha256": "40824f44610ea680f802c9e055b366055dc556058dd4b4b6f4f001c3752d52cd",
+      "installed_sha256": "40824f44610ea680f802c9e055b366055dc556058dd4b4b6f4f001c3752d52cd",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/CONTRACT_AND_PERMISSION_SCHEMA.md",
+      "source_sha256": "0208a5c4fa900e3b964f273445c25a91636e3e809f8442885c148ee5bea51384",
+      "installed_sha256": "0208a5c4fa900e3b964f273445c25a91636e3e809f8442885c148ee5bea51384",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/DASHBOARD_BROWSER_E2E_REPORT.md",
+      "source_sha256": "dd14fe5af52cd54bca5b15a961f66de7173c11d15fcf63f4d6fef1e4cd193830",
+      "installed_sha256": "dd14fe5af52cd54bca5b15a961f66de7173c11d15fcf63f4d6fef1e4cd193830",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/DEPLOYMENT_ACCEPTANCE_VI.md",
+      "source_sha256": "9df71049a68f8f5573d3c385a460eb750bddc65ff9d86beb83e5c0e6a0ec0545",
+      "installed_sha256": null,
+      "state": "SOURCE_ONLY",
+      "canonical_state": "SOURCE_ONLY"
+    },
+    {
+      "file": "docs/master-v1/FINAL_ENGINEERING_REPORT_VI.md",
+      "source_sha256": "cec6050d35a0fcac86d46e500f4484a2aecf20c835a181ebd78bd7575fb2a7e6",
+      "installed_sha256": "d368c1f1048ff5da90f659bdac3354659ee46285b2f2136a8313276a22c7bf2f",
+      "state": "DIFFERS",
+      "canonical_state": "DIFFERS"
+    },
+    {
+      "file": "docs/master-v1/FINAL_GATE_MATRIX.json",
+      "source_sha256": "74426f3ef3d5477d22d2f80e9d98081b98d37d86cc266d84b5905ecd68e04dd2",
+      "installed_sha256": "fadedc59380af51690b920e1e8a136af95c52a2109f37e3c81d3ac5a56101755",
+      "state": "DIFFERS",
+      "canonical_state": "DIFFERS"
+    },
+    {
+      "file": "docs/master-v1/MASTER_FEATURE_CROSSWALK.md",
+      "source_sha256": "700d60c4262f6f1d8bfc3b09a739939349058fabb499bd97e50391aed3a84de8",
+      "installed_sha256": "700d60c4262f6f1d8bfc3b09a739939349058fabb499bd97e50391aed3a84de8",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/OMS_COCKPIT_FEATURE_ADAPTATION.md",
+      "source_sha256": "deba04c93e9a348d095de52838b1293a52ffa700b3694491313b5c7d1b27d4a6",
+      "installed_sha256": "deba04c93e9a348d095de52838b1293a52ffa700b3694491313b5c7d1b27d4a6",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/SECURITY_QA_EVIDENCE_REPORT.md",
+      "source_sha256": "ee3c68c9ba19ca601ec9d73ea86ddacf3f9f18657121a26a3ec72995c703d8ce",
+      "installed_sha256": "ee3c68c9ba19ca601ec9d73ea86ddacf3f9f18657121a26a3ec72995c703d8ce",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/SHA256SUMS",
+      "source_sha256": "8cfa7a71a45125e884addfa1bc073821b6f66d0824bacc1bf89f00822c8ed53c",
+      "installed_sha256": "c7caf108afe89427099cd5687b07ad357e589615f146b9468a8d011a1c2d7715",
+      "state": "DIFFERS",
+      "canonical_state": "DIFFERS"
+    },
+    {
+      "file": "docs/master-v1/WORKSHARING_AND_SYNC_REPORT.md",
+      "source_sha256": "4ae96561a98cb92ad7459672bf17e2080904da5d75d256ee5c908247218af1da",
+      "installed_sha256": "4ae96561a98cb92ad7459672bf17e2080904da5d75d256ee5c908247218af1da",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/master-v1/deployment-dashboard.png",
+      "source_sha256": "80976a65562e7a0cde730283026dbb1ea8cb98f1d488c05f4970dcd23d36c00e",
+      "installed_sha256": null,
+      "state": "SOURCE_ONLY",
+      "canonical_state": "SOURCE_ONLY"
+    },
+    {
+      "file": "docs/master-v1/deployment-live-validation.json",
+      "source_sha256": "5294b6b9a00214f9a20420a8f3b2c1a6e38585cb63a4a5a9a27ca6593b1d806a",
+      "installed_sha256": null,
+      "state": "SOURCE_ONLY",
+      "canonical_state": "SOURCE_ONLY"
+    },
+    {
+      "file": "docs/master-v1/full-regression.txt",
+      "source_sha256": "777dd143a5fe995711cd9c460873e9ca0c612555aa27682e48fe00cc0051259a",
+      "installed_sha256": "777dd143a5fe995711cd9c460873e9ca0c612555aa27682e48fe00cc0051259a",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/oms-crosswalk.md",
+      "source_sha256": "d43975a0333ad8bcfd94908b4f74868554e9795d764a5ab8ec02b0a567383fed",
+      "installed_sha256": "d43975a0333ad8bcfd94908b4f74868554e9795d764a5ab8ec02b0a567383fed",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/final-regression.txt",
+      "source_sha256": "5979c53a9b41521646d122c3cdb3b0ef7a3596a6f9d96cce4875fcb1683a6606",
+      "installed_sha256": "5979c53a9b41521646d122c3cdb3b0ef7a3596a6f9d96cce4875fcb1683a6606",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/process-recovery.json",
+      "source_sha256": "6d49418b39ba85a3d20da5668f4df468be6926816e8aef9430da40ba97621796",
+      "installed_sha256": "6d49418b39ba85a3d20da5668f4df468be6926816e8aef9430da40ba97621796",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/run-studio.png",
+      "source_sha256": "62961e01af781bd98caf52195033775ac63e4f228f49b762b3dae9dfc69e5f41",
+      "installed_sha256": "62961e01af781bd98caf52195033775ac63e4f228f49b762b3dae9dfc69e5f41",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/wave-1.md",
+      "source_sha256": "8ce48025a889d04115918be5b19d82afb3ff09c2d36cd732bcd40eabfa187491",
+      "installed_sha256": "8ce48025a889d04115918be5b19d82afb3ff09c2d36cd732bcd40eabfa187491",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/wave-2.md",
+      "source_sha256": "9a449e19f4143dabb0cbf2af8bb148acbcf44101d4e53bc11c2e15d8a5e4d44c",
+      "installed_sha256": "9a449e19f4143dabb0cbf2af8bb148acbcf44101d4e53bc11c2e15d8a5e4d44c",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/wave-3.md",
+      "source_sha256": "42c5f2852c31ea18e73225bf2e3dad9018130b5c99828c351d166a61b15ac635",
+      "installed_sha256": "42c5f2852c31ea18e73225bf2e3dad9018130b5c99828c351d166a61b15ac635",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/qa/wave-4.md",
+      "source_sha256": "c7fa67386f3118c9a2b922e2599b9942c926a22889aae1474e89371145faadb2",
+      "installed_sha256": "c7fa67386f3118c9a2b922e2599b9942c926a22889aae1474e89371145faadb2",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/router-research.md",
+      "source_sha256": "93ad22ef4f9db590a6a8df70ff27c92241454ef1a7fc841208c23fe994ab6627",
+      "installed_sha256": "92d74aba2fd76fa7b521be5d92269095f566e0092dcac98cf1356d832a081e33",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "docs/runtime-feasibility.md",
+      "source_sha256": "0ecf98d87413c899f167f5a4fbd6e655e703aa21af7b0c7fc580e7f512853454",
+      "installed_sha256": "783a6af288c054746183eda886ead33df2059ee52ecb686457939c4e319b9317",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "orchestration.py",
+      "source_sha256": "0da5459a65382a71eb935e40cf853f6bbcb84bf99afb38688c00febfffdd919a",
+      "installed_sha256": "0da5459a65382a71eb935e40cf853f6bbcb84bf99afb38688c00febfffdd919a",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "qa_runner.py",
+      "source_sha256": "08ac70113e1cc4d116c55d1ee8e5712f2fb8dff686c38a1d6fc5354ac6d33775",
+      "installed_sha256": "08ac70113e1cc4d116c55d1ee8e5712f2fb8dff686c38a1d6fc5354ac6d33775",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "recovery_manager.py",
+      "source_sha256": "7872967abe487ba8b3b66b02c6da80e93f85c6d7ef1121eeb72e80ffc73cd81b",
+      "installed_sha256": "7872967abe487ba8b3b66b02c6da80e93f85c6d7ef1121eeb72e80ffc73cd81b",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "registry.py",
+      "source_sha256": "ec04ee10e09e85ddd23f38366f1196d6511b8d6b1b11741e6799d715d0ef51c9",
+      "installed_sha256": "ec04ee10e09e85ddd23f38366f1196d6511b8d6b1b11741e6799d715d0ef51c9",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "requirements.txt",
+      "source_sha256": "245247d1589c58f420b2907a4054d8a17d9ea385e8d10c7eed5b6a43899c20f0",
+      "installed_sha256": "a608db012383d07396040a036be6b929bcbde14d76a084e20191fba6573fccc0",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/backup-before-sync.ps1",
+      "source_sha256": "27ecb1313aa9c82ed13aeae918bea1ee9342601db9ac618d1b1545452cd7fd9a",
+      "installed_sha256": "d49f2f59d39bb77cb8a0f7e818a59c858de3ba2a75101b76d975a012e5450901",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/install-client.ps1",
+      "source_sha256": "dd429e17fd8f7055311f6a9f29b55847edd6d392181dd8a486e19be4522f3805",
+      "installed_sha256": "1ff4937e00b39cc4ec980fe50ee8dc46f099db4c9ea1c0140f3c514178116d9a",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/lock-private.ps1",
+      "source_sha256": "3fabc9b52cefe2f16ddb7a8f038401c6936e919ed1fd45827f0c69164749afd4",
+      "installed_sha256": "0527bc7effc291e05bdb3b7e5e8b7720d565fa4bcec1e67e5728bc0be751a075",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/provision-identities.py",
+      "source_sha256": "7d94e49296439b61a3a898ce20f1db9df88b460cdad7c663bc3ac477344517a1",
+      "installed_sha256": "d7dda4a3dc53a018209e90d1c2c04088ef05c1f5ec1a387e9139898348208844",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/smoke-test.ps1",
+      "source_sha256": "fe51cb6c19407b6f34a6e490637bbeaaed5bfd13504c9d7f34fb589fae7c8cb6",
+      "installed_sha256": "539f9763adcc05dcc7f258a6a976389df18e38ec88205c954f8285d13547af69",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/start-coordinator.ps1",
+      "source_sha256": "5d4b30afca8b5286389eaa54d374cfda4794fc2862c4dad60fc84e3e89348f56",
+      "installed_sha256": "b65e541549d45ec1afeed3732d769100df0f62730f3c64670895137cd6b4f5d0",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/start-local.ps1",
+      "source_sha256": "deb3dae1e361d70a2daead9e31cfc8d0d6b43cb4db655ff179a94615229cffc7",
+      "installed_sha256": "4cd2585dcee3b9b3fa7e3199e203abcd6627059861e986dd3b5ee4974f9a4ac3",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/stop-local.ps1",
+      "source_sha256": "75c4ba665d0cae110294febc44b575a23a6d7030719a47a56e77a413c86c6707",
+      "installed_sha256": "06572ed8bb432e88efbba6425fdb32d04e3763dbdc4eb29aba13c592bd419081",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "scripts/worktree-permission-check.ps1",
+      "source_sha256": "469d3fe7365c6251812429c4ac702613cdf049304e3438db718d37d028e147cf",
+      "installed_sha256": "88a9107314d04c6c0e806fb35829d9f71280430147cb2f134f2dbc2d2a511790",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "server.py",
+      "source_sha256": "133c9830c2a4f92eaee6bbfb3fdd77d858db5b4cf59acc385eb40a5c5f8a5bcb",
+      "installed_sha256": "133c9830c2a4f92eaee6bbfb3fdd77d858db5b4cf59acc385eb40a5c5f8a5bcb",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/e2e_local_harness.py",
+      "source_sha256": "611c29f2355b0a12745e638196046c8b0f638379ab20cee048c49b6cc458251d",
+      "installed_sha256": "4426316cfcf08c8f6067cae18a1c7cad6a6781942dc82ca30b17668f919df937",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/process_recovery_drill.py",
+      "source_sha256": "8415ff89974cc3364d7972b8c0e07e60df6aab280cdca7419c91dc5e54573b10",
+      "installed_sha256": "53fdd30d0075750e572e29d7c3617313e34164a5f8920c2ef9e657030e31d522",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_anti_runtime.py",
+      "source_sha256": "1d590c7f9ff0a99579e22d98bc778fe2f511c4de69e49d92e8ebb057d79763aa",
+      "installed_sha256": "db5b2fca984dcc5340ea8071f1f72dce79d6e9bc99d6afd23a33180d507d15c2",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_client_identity.py",
+      "source_sha256": "9b7927ec5ebe0d363a27ffc5c3945abc09162f21427164e0c41614d307f530d0",
+      "installed_sha256": "201fab069038599d53366b0d6a937835387feb6d2833f9d5d9be2dca1f78a06b",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_coordinator.py",
+      "source_sha256": "cf1b8d33d5c1bfaac4cacbfde1998a3e247bf84e65a53596fb7d43f00ffdee1d",
+      "installed_sha256": "cf1b8d33d5c1bfaac4cacbfde1998a3e247bf84e65a53596fb7d43f00ffdee1d",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_dashboard.py",
+      "source_sha256": "1f77992247ebb7c9136591c066f088f0ad80151557d77bdcacaafc8d26962143",
+      "installed_sha256": "eafb15d64a19e24e25901476c786296577cf370c5fec4772c4ff6c335d3c9267",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_dashboard_v07.py",
+      "source_sha256": "c1a4513bfa0c072dc9350eb2fe6039e073b4dece4c3756c85ce93bd12e21108f",
+      "installed_sha256": "c1a4513bfa0c072dc9350eb2fe6039e073b4dece4c3756c85ce93bd12e21108f",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_hardening.py",
+      "source_sha256": "9e8a334684568b222367fae85d429af5ea8c0e6230181005240f2ba7cd127685",
+      "installed_sha256": "9e8a334684568b222367fae85d429af5ea8c0e6230181005240f2ba7cd127685",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_human_requests.py",
+      "source_sha256": "876d910d4081628b547065288366b7616ed5789cbbc8dd8aeb07a8767271ed54",
+      "installed_sha256": "876d910d4081628b547065288366b7616ed5789cbbc8dd8aeb07a8767271ed54",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_legacy_boundaries.py",
+      "source_sha256": "fc13252a3ea462d39267d9e73ad317bf8cbd9039b951268177d682ad53c79c9b",
+      "installed_sha256": "727996db8ac478f88a517d5a7b4e676fc340e1d90c87107a838526e36aa91456",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_orchestration.py",
+      "source_sha256": "5dc0b373b1911b626c48dcb2c9820a68e51dd1053593a5d49682f02f5d998ffa",
+      "installed_sha256": "5dc0b373b1911b626c48dcb2c9820a68e51dd1053593a5d49682f02f5d998ffa",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_recovery.py",
+      "source_sha256": "4da6856500fe4648f2e825e102c17b6347f815bf2548c16b199209a256f72acd",
+      "installed_sha256": "4da6856500fe4648f2e825e102c17b6347f815bf2548c16b199209a256f72acd",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_recovery_http.py",
+      "source_sha256": "0eeba6134f6b53531fd802d75a1afe5a38a6cba0e790a070c31e640045d62007",
+      "installed_sha256": "0eeba6134f6b53531fd802d75a1afe5a38a6cba0e790a070c31e640045d62007",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_recovery_manager.py",
+      "source_sha256": "e3c01ad431389bed61fb1eac926177fb615431fd758fa3e6ef4c8c0ef9b3a180",
+      "installed_sha256": "e3c01ad431389bed61fb1eac926177fb615431fd758fa3e6ef4c8c0ef9b3a180",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_run_studio.py",
+      "source_sha256": "31c33b30c598df400bb1b2fe04c67c720bdab738ed5985484ec041caba84efd6",
+      "installed_sha256": "7c13f4b577b90aada26fe72fdb66f6bc236f80a04c8cbf0f33841d0db5f799a1",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_scope_gate.py",
+      "source_sha256": "7a8d9bf313254ad7d67d0020b36b6ebbfd8a1bd02e734c852a26bfd67db7dd9c",
+      "installed_sha256": "7a8d9bf313254ad7d67d0020b36b6ebbfd8a1bd02e734c852a26bfd67db7dd9c",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_transaction_sync.py",
+      "source_sha256": "8d9883809da2313ee7907de2c3bb707daaf6c8bb296c55cee2efa1ebe963664b",
+      "installed_sha256": "70c2ca61d3050bf547ba05263944b86439257b737676c611586e06d30cc22a25",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "tests/test_trust_vault.py",
+      "source_sha256": "957cd809c0d73e59b7e1b1079d7e2e41d18b9c40bb896e59ba399ec78ce14301",
+      "installed_sha256": "957cd809c0d73e59b7e1b1079d7e2e41d18b9c40bb896e59ba399ec78ce14301",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "transaction_sync.py",
+      "source_sha256": "f4d6edf19356c8f12897c3a9949b27d7683683e80c544435fa0b653c0260c45d",
+      "installed_sha256": "96b7b357c347149083cbf6242845691f24fa3e490868f241f0205dcb67e9ad94",
+      "state": "DIFFERS",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "trust_vault.py",
+      "source_sha256": "5d25eacdad4e93dc2c2afecc563bce70714367b9aa7a4222768ee51045b5ae93",
+      "installed_sha256": "5d25eacdad4e93dc2c2afecc563bce70714367b9aa7a4222768ee51045b5ae93",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "web/dashboard.css",
+      "source_sha256": "ebab96327029826139a8329a8954a2e1434477e709e86bfa6d3624683847c29c",
+      "installed_sha256": "ebab96327029826139a8329a8954a2e1434477e709e86bfa6d3624683847c29c",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "web/dashboard.js",
+      "source_sha256": "56d46bdda361d6fc5eafb29e1b8da58ed7ab91b631da41b16666811d59738603",
+      "installed_sha256": "56d46bdda361d6fc5eafb29e1b8da58ed7ab91b631da41b16666811d59738603",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    },
+    {
+      "file": "web/index.html",
+      "source_sha256": "0a2d13ed356726c05ee48aaebdfb28000fdc41360ab8124b3780cca84fb73e46",
+      "installed_sha256": "0a2d13ed356726c05ee48aaebdfb28000fdc41360ab8124b3780cca84fb73e46",
+      "state": "MATCH",
+      "canonical_state": "MATCH"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "PILOT-ANTI01",
+      "state": "FROZEN",
+      "owner": "ANTI-01",
+      "scope": "architectural/envelope",
+      "fencing": 1
+    },
+    {
+      "id": "PILOT-ANTI02",
+      "state": "FROZEN",
+      "owner": "ANTI-02",
+      "scope": "documentation/schedules",
+      "fencing": 2
+    },
+    {
+      "id": "UI-SMOKE",
+      "state": "QUEUED",
+      "owner": null,
+      "scope": "ui-smoke",
+      "fencing": 0
+    }
+  ],
+  "locks": [
+    {
+      "scope": "architectural/envelope",
+      "task_id": "PILOT-ANTI01",
+      "owner": "ANTI-01",
+      "fencing": 1,
+      "state": "FROZEN"
+    },
+    {
+      "scope": "documentation/schedules",
+      "task_id": "PILOT-ANTI02",
+      "owner": "ANTI-02",
+      "fencing": 2,
+      "state": "FROZEN"
+    }
+  ],
+  "sqlite_integrity": "ok",
+  "schema_versions": [
+    {
+      "key": "human_requests_schema_version",
+      "value": "2"
+    }
+  ],
+  "crosswalk_counts": {
+    "PARTIAL": 40,
+    "BLOCKED": 6,
+    "VERIFIED": 6,
+    "MISSING": 4
+  },
+  "github_public_branch_observation": [
+    {
+      "name": "feature/command-center-four-wave-oms",
+      "sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "protected": false
+    },
+    {
+      "name": "feature/master-scope-v1-governance",
+      "sha": "1f0f5e4a72e4bc028a8d2194fc00f82d3b391d5c",
+      "protected": false
+    }
+  ]
+}

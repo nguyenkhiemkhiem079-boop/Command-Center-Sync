@@ -49,8 +49,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 New-Item -ItemType Directory -Force -Path $Storage | Out-Null
 $Principal = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-& icacls $Storage /inheritance:r /grant:r "${Principal}:(OI)(CI)F" 'SYSTEM:(OI)(CI)F' | Out-Null
-if ($LASTEXITCODE -ne 0) { throw 'Identity directory ACL failed' }
+& (Join-Path $PSScriptRoot 'protect-private-path.ps1') -LiteralPath $Storage
 if (-not (Test-Path -LiteralPath $TokenFile)) {
   $Secret = Read-Host "Paste the $Role registry token (never Google OAuth)" -AsSecureString
   $Ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Secret)
@@ -63,8 +62,7 @@ if (-not (Test-Path -LiteralPath $TokenFile)) {
     $Token = $null
   }
 }
-& icacls $TokenFile /inheritance:r /grant:r "${Principal}:F" 'SYSTEM:F' | Out-Null
-if ($LASTEXITCODE -ne 0) { throw 'Credential ACL failed' }
+& (Join-Path $PSScriptRoot 'protect-private-path.ps1') -LiteralPath $TokenFile
 # Separate launcher contains only paths and identity, never credential contents.
 $Launcher = Join-Path $Storage ($Name + '.ps1')
 $Quote = { param($value) "'" + $value.Replace("'","''") + "'" }

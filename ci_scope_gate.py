@@ -11,7 +11,10 @@ from registry import clean_scope
 SHA = re.compile(r'^[0-9a-fA-F]{40}$')
 
 def git(repo, *args):
-    result = subprocess.run(['git', *args], cwd=repo, capture_output=True, check=False)
+    environment=dict(os.environ)
+    for key in ('GIT_DIR','GIT_WORK_TREE','GIT_COMMON_DIR','GIT_INDEX_FILE','GIT_EXTERNAL_DIFF'):
+        environment.pop(key,None)
+    result = subprocess.run(['git', *args], cwd=repo, capture_output=True, check=False,env=environment,timeout=30)
     if result.returncode:
         raise ValueError('git command failed: ' + ' '.join(args[:2]))
     return result.stdout
@@ -34,7 +37,7 @@ def verify(repo, base, commit, scope, allowed_paths=None, protected_paths=None):
             raise ValueError('allowed paths must be inside task scope')
         for sha in (base,commit): git(repo,'cat-file','-e',sha+'^{commit}')
         git(repo,'merge-base','--is-ancestor',base,commit)
-        fields=git(repo,'diff','--name-status','--no-renames','-z',base,commit,'--').split(b'\0')
+        fields=git(repo,'diff','--no-ext-diff','--no-textconv','--name-status','--no-renames','-z',base,commit,'--').split(b'\0')
         if fields[-1] != b'': raise ValueError('truncated diff')
         fields.pop()
         if len(fields)%2: raise ValueError('invalid diff records')
@@ -74,16 +77,38 @@ def verify(repo, base, commit, scope, allowed_paths=None, protected_paths=None):
     return {'pass':not errors,'errors':errors,'changed_paths':changed,'entries':entries,
             'base_sha':base,'commit_sha':commit,'quarantine':bool(errors)}
 
+
+def verify_policy(repo,base,commit,policy,assignment=None,repository=None):
+    """Policy loaded from immutable trusted base; a pending policy never permits CI."""
+    if not isinstance(policy,dict): raise ValueError('POLICY_OBJECT_REQUIRED')
+    if policy.get('schema_version')!=1: raise ValueError('UNSUPPORTED_POLICY_SCHEMA')
+    if set(policy)-{'schema_version','repository','approval_state','assignments','protected_paths'}: raise ValueError('UNKNOWN_POLICY_FIELDS')
+    if not isinstance(policy.get('repository'),str) or not policy['repository']: raise ValueError('REPOSITORY_REQUIRED')
+    if repository is not None and policy['repository']!=repository: raise ValueError('POLICY_REPOSITORY_MISMATCH')
+    if policy.get('approval_state')!='OWNER_APPROVED': raise ValueError('OWNER_APPROVED_BASE_POLICY_REQUIRED')
+    assignments=policy.get('assignments')
+    if not isinstance(assignments,dict) or not assignment or assignment not in assignments: raise ValueError('APPROVED_ASSIGNMENT_REQUIRED')
+    item=assignments[assignment]
+    if not isinstance(item,dict) or set(item)!={'scope','allowed_paths','resource_locks','required_resource_locks'}: raise ValueError('ASSIGNMENT_POLICY_SCHEMA')
+    protected=policy.get('protected_paths')
+    if not isinstance(protected,list) or not protected: raise ValueError('PROTECTED_PATHS_REQUIRED')
+    for values in (item['allowed_paths'],protected,item['resource_locks'],item['required_resource_locks']):
+        if not isinstance(values,list) or any(not isinstance(v,str) or not v for v in values): raise ValueError('EXPLICIT_POLICY_LIST_REQUIRED')
+    if not set(item['required_resource_locks'])<=set(item['resource_locks']): raise ValueError('SHARED_RESOURCE_LOCK_REQUIRED')
+    # Name-status without rename folding validates both source and destination.
+    result=verify(repo,base,commit,item['scope'],item['allowed_paths'],protected)
+    result.update({'assignment':assignment,'repository':policy['repository'],'policy_source':'TRUSTED_BASE_REQUIRED','production_approval_inferred':False})
+    return result
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo',required=True); parser.add_argument('--base',required=True)
     parser.add_argument('--commit',required=True); parser.add_argument('--policy',required=True)
+    parser.add_argument('--assignment');parser.add_argument('--repository')
     args=parser.parse_args()
     try:
         policy=json.loads(Path(args.policy).read_text(encoding='utf-8'))
-        if not isinstance(policy,dict) or not policy.get('scope') or not policy.get('allowed_paths'):
-            raise ValueError('trusted scope and allowed_paths policy required')
-        result=verify(args.repo,args.base,args.commit,policy['scope'],policy['allowed_paths'],policy.get('protected_paths'))
+        result=verify_policy(args.repo,args.base,args.commit,policy,args.assignment,args.repository)
     except (OSError,ValueError,TypeError) as ex:
         result={'pass':False,'errors':[str(ex)],'quarantine':True}
     print(json.dumps(result,indent=2))
