@@ -170,7 +170,7 @@
         "up-to-date branch"
       ],
       "blocked": ["force push", "deletion"],
-      "evidence": ["ruleset-active.png", "pr1-merge-blocked-dom.txt", "direct-push-attempt.txt"]
+      "evidence": ["ci-protection-verified.json", "ruleset-active.png", "pr1-merge-blocked-dom.txt", "pr2-merge-blocked-dom.txt", "direct-push-attempt.txt"]
     },
     "direct_push_probe": {"candidate_sha":"485896c49428862c70c8a4814f2680aeaae82362","status":"REJECTED_GH013","target_unchanged":true},
     "pr1_merge_gate": "BLOCKED_REVIEW_REQUIRED",

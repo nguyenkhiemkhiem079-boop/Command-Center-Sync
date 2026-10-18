@@ -21,7 +21,7 @@ W4: original incremental Fleet Cockpit, three-layer identity UNKNOWN, controller
 
 ## Git và bằng chứng
 
-Development branch `feature/full-fix-e2e-acceptance` pushed through552197b. Wave commits:711b6e8,9b171df,3832d7b,8b838a1; subsequent fixes e421816,c79e407,ef9bd67,8a3b275,552197b. Wave4 first regression had1 mock failure; corrected in e421816 and subsequent full suites pass. Original FAIL log preserved; no history rewrite.
+Development branch `feature/full-fix-e2e-acceptance` hiện ở `7566812ee290bca0dd2c04498e99e7eaf5d628a8`. Wave commits:711b6e8,9b171df,3832d7b,8b838a1; subsequent fixes e421816,c79e407,ef9bd67,8a3b275,552197b, reporting commits4fbf2d7 và7566812. Wave4 first regression had1 mock failure; corrected in e421816 and subsequent full suites pass. Original FAIL log preserved; no history rewrite.
 
 `evidence-full-fix/candidate-source-inventory.json` lists 43 affected source files with hashes relative to baseline. `git diff 1f0f5e4a72e4bc028a8d2194fc00f82d3b391d5c 552197b91b09c955d0fb48f96e329eba20b98f64` reproduces source diff; report docs are a later commit. Hosted runs39133452978/39133453324 JSON contain actual candidate/job/step status. Local logs, screenshots and JSON retained in workspace; checksums manifest accompanies handover. Private SQLite/token files are not delivery artifacts.
 
@@ -33,7 +33,7 @@ Rollback after a future approved update: stop only verified coordinator process;
 
 ## Cổng còn thiếu và bước mở khóa
 
-1. GitHub protection đã xác minh active trên đúng nhánh; direct push bị chặn và PR merge thiếu approval bị disabled. PR pilot vẫn mở, chưa merge.
+1. GitHub protection đã xác minh active trên đúng nhánh; direct push bị chặn và PR merge thiếu approval bị disabled. PR pilot vẫn mở, chưa merge. Full API snapshot `ci-protection-verified.json`.
 2. Protected independent verifier/owner principal thực sự: phê duyệt thiết kế/entrypoint pin protected workflow source, candidate SHA, test profile/suite and artifacts. Scope check alone không chứng nhận full QA. Same-Windows-user files/hashes không bảo đảm worker không giả bằng chứng. Production acceptance vẫn disabled.
 3. Operator mở hai Antigravity sessions bằng cơ chế được hỗ trợ, cung cấp IDs không bí mật; kiểm chứng time overlap, roles/worktrees, permitted ACK/source edits/self-QA/checkpoints/Codex feedback. Giữ `BLOCKED_TWO_ACCOUNT_TEAMWORK` tới khi có chứng cứ; không kết luận impossible.
 4. Candidate staging review và approval riêng trước upgrade8876. Native sessions, real subprocess subagents, Windows restart, pilot2 repo/branch, Revit2025 host và long-running mission chưa thực thi/duyệt. Không reboot máy có Revit đang mở. Không production merge/release nếu chưa có approval cụ thể.

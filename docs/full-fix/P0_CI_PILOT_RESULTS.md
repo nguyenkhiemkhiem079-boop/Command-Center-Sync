@@ -11,11 +11,11 @@ Chủ dự án duyệt nhánh và CI pilot trong cuộc trò chuyện. Không c�
 
 ## Protection đã xác minh
 
-Ruleset ID `25346465`, enforcement `active`, target đúng `refs/heads/integration/command-center-qa`, bypass list rỗng. Bắt buộc PR, 1 review, dismiss stale approvals, approval lần push cuối, check `Trusted base scope policy` từ GitHub Actions app, branch up-to-date; block force push và deletion. Classic rule cũng đặt PR/review/required-check; giao diện xác nhận rule này được ruleset bao phủ. PR #1 hiện có 1/1 check pass nhưng merge vẫn disabled vì thiếu review; message nêu cần approval khác người push. Không có merge.
+Ruleset ID `25346465`, enforcement `active`, target đúng `refs/heads/integration/command-center-qa`, bypass list rỗng. API xác nhận branch `protected:true`; required check `Trusted base scope policy`, GitHub Actions app ID15368, enforcement everyone. Bắt buộc PR, 1 review, dismiss stale approvals, approval lần push cuối, branch up-to-date; block force push và deletion. Classic rule cũng đặt PR/review/required-check; giao diện xác nhận rule này được ruleset bao phủ. PR #1 có 1/1 check pass nhưng merge disabled vì thiếu review; PR #2 có 0/1 và merge disabled do check fail. Không có merge.
 
 Direct-push probe commit `485896c49428862c70c8a4814f2680aeaae82362` bị GitHub từ chối (exit1, GH013): required status check chưa có cho SHA và changes must be made through PR. Probe không cập nhật protected ref. Bằng chứng raw trong `evidence-full-fix/direct-push-attempt.txt`.
 
-Evidence ngoài Git: `evidence-full-fix/ci-pilot-branch.json`, `ci-run-39133452978.json`, `ci-run-39133453324.json`, `ci-negative-dom.txt`, `ci-negative.png`, `direct-push-attempt.txt`, GitHub UI ruleset/PR merge-status observation.
+Evidence ngoài Git: `evidence-full-fix/ci-protection-verified.json`, `ci-run-39133452978.json`, `ci-run-39133453324.json`, `ci-negative-dom.txt`, `ci-negative.png`, `direct-push-attempt.txt`, PR1/PR2 merge-blocked DOM/screenshots, GitHub ruleset UI screenshot.
 
 ## Giới hạn tin cậy
 
