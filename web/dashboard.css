@@ -7,3 +7,5 @@
 .studio-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}.studio-table td{white-space:normal;overflow-wrap:anywhere;max-width:320px}.studio-table{min-width:650px}
 
 .hierarchy-tree,.hierarchy-tree ul{list-style:none;padding-left:20px}.hierarchy-tree ul{border-left:1px solid #dce4ef}.hierarchy-node{display:flex;flex-direction:column;gap:5px;padding:12px;margin:8px 0;background:#f5f8fc;border-radius:8px}.hierarchy-node small{color:#526175}
+
+.fleet-graph{min-width:900px;width:100%;height:auto}.panel-body{min-width:0}

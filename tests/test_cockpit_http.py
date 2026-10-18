@@ -28,4 +28,22 @@ class CockpitHttpTests(unittest.TestCase):
             code,data=self.call('/ui/api/snapshot')
         self.assertEqual(code,503);self.assertEqual(data['error'],'REGISTRY_SUMMARY_UNAVAILABLE')
         self.assertNotIn('filesystem',str(data))
+    def test_staging_login_does_not_overwrite_other_port_session(self):
+        from http.server import ThreadingHTTPServer
+        from threading import Thread
+        from server import handler_factory
+        from registry import Registry,hash_token
+        from urllib.request import Request
+        import json
+        self.login()
+        other=ThreadingHTTPServer(('127.0.0.1',0),handler_factory(Registry(self.db.dbfile+'-other'),{r:hash_token(t) for r,t in self.tokens.items()}))
+        thread=Thread(target=other.serve_forever,daemon=True);thread.start()
+        self.addCleanup(other.server_close);self.addCleanup(thread.join,3);self.addCleanup(other.shutdown)
+        origin='http://127.0.0.1:'+str(other.server_port)
+        request=Request(origin+'/ui/api/login',data=json.dumps({'token':self.tokens['CODEX']}).encode(),headers={'Content-Type':'application/json','Origin':origin})
+        with self.opener.open(request) as response:self.assertEqual(response.status,200)
+        self.assertEqual(self.call('/ui/api/snapshot')[0],200)
+        jars=[h.cookiejar for h in self.opener.handlers if hasattr(h,'cookiejar')]
+        names={cookie.name for jar in jars for cookie in jar}
+        self.assertIn('kt_session_'+str(self.srv.server_port),names);self.assertIn('kt_session_'+str(other.server_port),names)
 if __name__=='__main__':unittest.main()

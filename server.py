@@ -99,7 +99,7 @@ def handler_factory(store: Registry, hashes: dict):
             c=self.headers.get('Cookie','')
             sid=None
             for part in c.split(';'):
-                if part.strip().startswith('kt_session='):
+                if part.strip().startswith(f'kt_session_{self.server.server_port}='):
                     sid=part.strip().partition('=')[2]
             if not sid: return None
             with session_lock:
@@ -250,7 +250,7 @@ def handler_factory(store: Registry, hashes: dict):
                     with session_lock:
                         sessions[sid]={'expires':time.time()+SESSION_TTL,'csrf':csrf}
                     return self.respond(200,{'ok':True,'message':'SIGNED_IN'},
-                                        [('Set-Cookie',f'kt_session={sid}; HttpOnly; SameSite=Strict; Path=/ui; Max-Age={SESSION_TTL}')])
+                                        [('Set-Cookie',f'kt_session_{self.server.server_port}={sid}; HttpOnly; SameSite=Strict; Path=/ui; Max-Age={SESSION_TTL}')])
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
                 if self.headers.get('X-KTOOL-CSRF','')!=sess['csrf']:
@@ -281,10 +281,10 @@ def handler_factory(store: Registry, hashes: dict):
                 elif path=='/ui/api/logout':
                     c=self.headers.get('Cookie','')
                     for part in c.split(';'):
-                        if part.strip().startswith('kt_session='):
+                        if part.strip().startswith(f'kt_session_{self.server.server_port}='):
                             sid=part.strip().partition('=')[2]
                             with session_lock:sessions.pop(sid,None)
-                    return self.respond(200,{'ok':True},[('Set-Cookie','kt_session=; HttpOnly; SameSite=Strict; Path=/ui; Max-Age=0')])
+                    return self.respond(200,{'ok':True},[('Set-Cookie',f'kt_session_{self.server.server_port}=; HttpOnly; SameSite=Strict; Path=/ui; Max-Age=0')])
                 else:return self.respond(404,{'error':'NOT_FOUND'})
                 return self.respond(200,{'ok':True,'result':result})
             except Denied as e:return self.respond(e.http_status,{'ok':False,'error':str(e)})

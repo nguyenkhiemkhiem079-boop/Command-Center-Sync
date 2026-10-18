@@ -4,7 +4,7 @@ $Source=(Resolve-Path -LiteralPath $PSScriptRoot).Path
 $Target=(Resolve-Path -LiteralPath $Target).Path
 if($Source -eq $Target){throw 'Upgrade requires separate reviewed source staging directory'}
 if(!(Test-Path -LiteralPath (Join-Path $Target 'private/registry.db'))){throw 'Existing Registry required; no bootstrap or reset permitted'}
-$Names=@('registry.py','server.py','client_mcp.py','qa_runner.py','backup_registry.py','ci_scope_gate.py','orchestration.py','trust_vault.py','transaction_sync.py','recovery_manager.py','governance.py','cockpit.py','mission_recovery.py','worktree_manager.py','anti_runtime.py','VERSION','requirements.txt')
+$Names=@('registry.py','server.py','client_mcp.py','qa_runner.py','backup_registry.py','ci_scope_gate.py','orchestration.py','trust_vault.py','transaction_sync.py','recovery_manager.py','governance.py','cockpit.py','mission_recovery.py','worktree_manager.py','anti_runtime.py','VERSION','requirements.txt','constraints-windows-py312.txt')
 foreach($Folder in @('web','clients','scripts','docs','.github')){
  $Base=Join-Path $Source $Folder
  if(Test-Path -LiteralPath $Base){foreach($File in Get-ChildItem -LiteralPath $Base -File -Recurse){$Names+=($File.FullName.Substring($Source.Length+1))}}
