@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "provenance": "TEST_HARNESS_NOT_ANTIGRAVITY",
+  "base_sha": "4fc9f75af14ba88d644d5ed0aecef2905a309447",
+  "commits": {
+    "A": "08fe82127bad3a26518e1c45d188f9f5f672555c",
+    "B": "d4c144e9de98b00d04a62e8bcc4856c368b914d2"
+  },
+  "integration_sha": "47ed47fa4b210071a55ac3438ccc4de178302d1f",
+  "initial_A": "FAIL",
+  "corrected_A": "PASS",
+  "B": "PASS",
+  "feedback_resubmission_cycles": 1,
+  "fixture_processes_overlapped": true,
+  "real_teamwork_concurrency": "NOT_EXECUTED",
+  "revit_runtime": "NOT_EXECUTED"
+}

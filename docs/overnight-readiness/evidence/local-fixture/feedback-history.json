@@ -1,0 +1,22 @@
+{
+  "task_id": "A",
+  "qa_round": 2,
+  "history": [
+    {
+      "at": "2026-10-18T17:48:05+00:00",
+      "cycle": 1,
+      "decision": "CHANGES_REQUESTED",
+      "report": "Negative dimension validation violates contract",
+      "issues_json": "[{\"id\": \"AREA-NEG\", \"file\": \"architectural/envelope/area.py\", \"severity\": \"high\", \"expected\": \"negative width raises ValueError\", \"actual\": \"negative product returned\", \"evidence\": \"trusted oracle exit 1\"}]",
+      "evidence_ref": "A-independent-round1.json"
+    },
+    {
+      "at": "2026-10-18T17:48:07+00:00",
+      "cycle": 2,
+      "decision": "PASS_CODE_REVIEW",
+      "report": "TEST_HARNESS scope diff and independent oracle verified; not an AI source review",
+      "issues_json": "[]",
+      "evidence_ref": "A-independent-final.json"
+    }
+  ]
+}

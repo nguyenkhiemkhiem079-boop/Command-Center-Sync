@@ -1,0 +1,40 @@
+{
+  "provenance": "TEST_HARNESS_NOT_ANTIGRAVITY",
+  "owner": "ANTI-02",
+  "task": "B",
+  "commit": "d4c144e9de98b00d04a62e8bcc4856c368b914d2",
+  "started": 1792345683.8445067,
+  "ended": 1792345684.4238117,
+  "build": {
+    "command": [
+      "C:\\KTOOL\\CommandCenter\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "compileall",
+      "-q",
+      "documentation/schedules"
+    ],
+    "exit": 0,
+    "stdout": ""
+  },
+  "tests": {
+    "command": [
+      "C:\\KTOOL\\CommandCenter\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "documentation/schedules",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "exit": 0,
+    "stdout": "test_totals (test_schedule.ScheduleTest.test_totals) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK"
+  },
+  "paths": [
+    "documentation/schedules/schedule.py",
+    "documentation/schedules/test_schedule.py"
+  ]
+}

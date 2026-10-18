@@ -1,0 +1,15 @@
+{
+  "observed_on": "2026-10-19 Asia/Bangkok",
+  "base_url": "http://127.0.0.1:8876",
+  "checks": {
+    "unauthenticated_snapshot": 401,
+    "codex_login": 200,
+    "authenticated_snapshot": 200,
+    "run_studio": 200,
+    "wave_report": 200,
+    "logout": 200,
+    "snapshot_after_logout": 401
+  },
+  "credentials_or_session_values_logged": false,
+  "verification_level": "AUTHENTICATED_HTTP_API_NOT_VISUAL_BROWSER"
+}

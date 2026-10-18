@@ -1,0 +1,71 @@
+{
+  "observed_on": "2026-10-19 Asia/Bangkok",
+  "controller": {
+    "url": "http://127.0.0.1:8876",
+    "health": "PASS",
+    "process_id": 23652,
+    "executable": "C:\\Users\\khiem.nguyen\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "command": "C:/KTOOL/CommandCenter/MCP/server.py --port 8876",
+    "reported_deployment_source_sha": "c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d",
+    "deployment_sha_source": "C:\\KTOOL\\CommandCenter\\MCP\\DEPLOYMENT.json; manifest claim, not verified Git HEAD"
+  },
+  "protocol": {
+    "transport": "MCP stdio",
+    "initialize": "PASS for CODEX",
+    "protocol_version": "2025-03-26",
+    "server": "K-TOOL Worksharing Recovery v0.7",
+    "server_version": "1.30.0",
+    "tool_count": 36
+  },
+  "identities": {
+    "CODEX": {
+      "adapter_connection": "PASS",
+      "tool_discovery": "PASS",
+      "status_actor_match": "PASS",
+      "own_task_read": "PASS (status and own task only)",
+      "cross_owner_read_denied": "NOT_APPLICABLE",
+      "privileged_task_mutation_denied": "NOT_APPLICABLE"
+    },
+    "ANTI-01": {
+      "adapter_connection": "PASS",
+      "tool_discovery": "PASS",
+      "status_actor_match": "PASS",
+      "own_task_read": "PASS (PILOT-ANTI01; task remains FROZEN)",
+      "cross_owner_read_denied": "PASS (PILOT-ANTI02 returned ROLE_DENIED)",
+      "create_task_denied": "PASS (ROLE_DENIED)",
+      "review_task_denied": "PASS (ROLE_DENIED)"
+    },
+    "ANTI-02": {
+      "adapter_connection": "PASS",
+      "tool_discovery": "PASS",
+      "status_actor_match": "PASS",
+      "own_task_read": "PASS (PILOT-ANTI02; task remains FROZEN)",
+      "cross_owner_read_denied": "NOT_TESTED_FROM_ANTI-02",
+      "create_task_denied": "PASS (ROLE_DENIED)",
+      "review_task_denied": "PASS (ROLE_DENIED)"
+    }
+  },
+  "credential_isolation": {
+    "distinct_role_specific_file_references": "PASS",
+    "three_stored_client_tokens_distinct": "PASS; values not recorded",
+    "strong_os_principal_isolation": "NOT_PROVIDED; all processes share one Windows user"
+  },
+  "reconnect": {
+    "disposable_ANTI-01_stdio_adapter_restart": "PASS",
+    "coordinator_restart": "NOT_TESTED_ON_LIVE_SERVICE"
+  },
+  "antigravity": {
+    "IDE_MCP_call": "NOT_EXECUTED",
+    "teamwork_active": "UNKNOWN",
+    "two_real_session_overlap": "NOT_EXECUTED",
+    "evidence_file": "ANTI_RUNTIME_EVIDENCE.md"
+  },
+  "warning": "Successful MCP subprocess probes establish adapter connectivity only. They do not prove Antigravity IDE sessions or Teamwork execution.",
+  "known_registry_probe": {
+    "task_id": "OVERNIGHT-RBAC-CODEX",
+    "state": "QUEUED",
+    "owner": null,
+    "lock": "NONE",
+    "disposition": "Created by a positive CODEX RBAC probe; no supported delete transition exists. Preserved, not edited directly in SQLite."
+  }
+}

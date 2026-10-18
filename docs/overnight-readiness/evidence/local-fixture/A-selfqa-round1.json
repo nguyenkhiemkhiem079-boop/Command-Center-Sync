@@ -1,0 +1,40 @@
+{
+  "provenance": "TEST_HARNESS_NOT_ANTIGRAVITY",
+  "owner": "ANTI-01",
+  "task": "A",
+  "commit": "fa27ed25122107018cfefafe0f6aac620428b17c",
+  "started": 1792345683.8445067,
+  "ended": 1792345684.4058187,
+  "build": {
+    "command": [
+      "C:\\KTOOL\\CommandCenter\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "compileall",
+      "-q",
+      "architectural/envelope"
+    ],
+    "exit": 0,
+    "stdout": ""
+  },
+  "tests": {
+    "command": [
+      "C:\\KTOOL\\CommandCenter\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "architectural/envelope",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "exit": 0,
+    "stdout": "test_positive (test_area.AreaTest.test_positive) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK"
+  },
+  "paths": [
+    "architectural/envelope/area.py",
+    "architectural/envelope/test_area.py"
+  ]
+}
