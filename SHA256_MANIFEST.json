@@ -1,0 +1,196 @@
+{
+  "version": "0.6.0-pilot",
+  "release_scope": "Registry/Recovery/Local QA only; no Antigravity or Revit host verification",
+  "files": [
+    {
+      "file": ".gitignore",
+      "sha256": "e112f54ab5a915e5491fd660872316ea2f722911fe13bd169f63acec5d260736",
+      "bytes": 88
+    },
+    {
+      "file": "01_SETUP.bat",
+      "sha256": "129f5460ac083b78f5bd1f9375028a2263637e802ec6a15a98eab6038c50ec0e",
+      "bytes": 718
+    },
+    {
+      "file": "02_START_DASHBOARD.bat",
+      "sha256": "715700ed22f2d398d4877b9e273a246a8872332820f9adbcc5c2dc4f6020bd86",
+      "bytes": 452
+    },
+    {
+      "file": "03_TEST_REGISTRY.bat",
+      "sha256": "59112660b60bbbbcc49f519d9cac821f7ee1c34fb037fb4ff95debe3efff9ddb",
+      "bytes": 69
+    },
+    {
+      "file": "README_DASHBOARD_VI.md",
+      "sha256": "43ffe35161453cf0105835f3b4654d1be651160fd53ea76d1f7a62fb01428d3d",
+      "bytes": 1220
+    },
+    {
+      "file": "README_VI.md",
+      "sha256": "7de424058724e1b64282f3310d78d60611723cf7c0717f7a6e5131fb60967b84",
+      "bytes": 8122
+    },
+    {
+      "file": "START-HERE-DASHBOARD.txt",
+      "sha256": "56fb91a6235e4787478149f479ebb2147f90b5d9f12694a3fd1360213b95284d",
+      "bytes": 568
+    },
+    {
+      "file": "START-HERE.txt",
+      "sha256": "56fb91a6235e4787478149f479ebb2147f90b5d9f12694a3fd1360213b95284d",
+      "bytes": 568
+    },
+    {
+      "file": "UPGRADE_EXISTING_MCP.ps1",
+      "sha256": "41be10adccb1f702babd9db28ac81d5541c73b7ab0a18ccc617384ae73c9686c",
+      "bytes": 2598
+    },
+    {
+      "file": "VERSION",
+      "sha256": "126b57f872d4b6150af5cbca737f2ad9accf9d5c8456a59f1c3f9f153b09aba8",
+      "bytes": 12
+    },
+    {
+      "file": "backup_registry.py",
+      "sha256": "2fe50581fcad30b96b7f74d34e96be93e844fa2502047df86be662580a271d70",
+      "bytes": 1343
+    },
+    {
+      "file": "bootstrap.py",
+      "sha256": "ed3cb7abd3992d8a6c7f91c27f91973ff32016513d96701832190f1157fe6918",
+      "bytes": 1085
+    },
+    {
+      "file": "client_mcp.py",
+      "sha256": "65926bc32799a40e6c31dc2007f1de75eb094075b494c4935424517ab87985ab",
+      "bytes": 7073
+    },
+    {
+      "file": "config/qa_profile.example.json",
+      "sha256": "1e9dc259bda1a7f001ff0d600ffa7b3d78e9c1ac0efa59a00ffdfcaacf2848a8",
+      "bytes": 207
+    },
+    {
+      "file": "docs/CODEX_RELIABILITY_RECOVERY_V06.md",
+      "sha256": "c1f4bb380a41d3440bdb01f3dfc8dcbe3efeadd9d8fdd27b9773dbb1673e8ff9",
+      "bytes": 4147
+    },
+    {
+      "file": "docs/CODEX_SUPERVISOR_DUAL_DEV.md",
+      "sha256": "07289991d3885585bdf8ffcbb7def717a078fec0df14a23d713558a80b929d61",
+      "bytes": 529
+    },
+    {
+      "file": "docs/CODEX_WORKSHARING_QA_LOOP_V05.md",
+      "sha256": "e02052d51e6facb6b0cab51242642de993100abce6388b499eb7bb43f61d63c7",
+      "bytes": 8030
+    },
+    {
+      "file": "docs/PILOT_TWO_TEAMWORK_SESSIONS.md",
+      "sha256": "d13c44a65d639467ef430ec26ea0435bf92d886928dda65925d740d6d29d5e3e",
+      "bytes": 3276
+    },
+    {
+      "file": "docs/RELIABILITY_ACCEPTANCE_MATRIX.md",
+      "sha256": "c37912a5bb7785521288401cf559e20cb64fea41672697b4506fd78b627f1b5a",
+      "bytes": 2612
+    },
+    {
+      "file": "docs/RESET.md",
+      "sha256": "74f49382bb9fdeca63f2ea8666213f50042f0d029bcb677f0dc6e9b6f39025f3",
+      "bytes": 636
+    },
+    {
+      "file": "docs/SECURITY_AND_NEXT_STEPS.md",
+      "sha256": "7db7d4b26241685f663841c0e8c22acd9fcebacf97330f0c82872a08175ea661",
+      "bytes": 1598
+    },
+    {
+      "file": "qa_runner.py",
+      "sha256": "4c2dcb4f3dba18d6dfdd4340e6d5758dfb867329f49a88ba17858038d3b19bb7",
+      "bytes": 4528
+    },
+    {
+      "file": "registry.py",
+      "sha256": "f31a46d57563b71a9dec5c52a044606758d25c719f5c75ef2cddb30851936fef",
+      "bytes": 41028
+    },
+    {
+      "file": "requirements.txt",
+      "sha256": "245247d1589c58f420b2907a4054d8a17d9ea385e8d10c7eed5b6a43899c20f0",
+      "bytes": 13
+    },
+    {
+      "file": "scripts/backup-before-sync.ps1",
+      "sha256": "27ecb1313aa9c82ed13aeae918bea1ee9342601db9ac618d1b1545452cd7fd9a",
+      "bytes": 382
+    },
+    {
+      "file": "scripts/install-client.ps1",
+      "sha256": "336c826647715873eadb82be082b57dbad61193c57dd3ef8572ff0a2449994e0",
+      "bytes": 3449
+    },
+    {
+      "file": "scripts/lock-private.ps1",
+      "sha256": "3fabc9b52cefe2f16ddb7a8f038401c6936e919ed1fd45827f0c69164749afd4",
+      "bytes": 525
+    },
+    {
+      "file": "scripts/smoke-test.ps1",
+      "sha256": "fe51cb6c19407b6f34a6e490637bbeaaed5bfd13504c9d7f34fb589fae7c8cb6",
+      "bytes": 428
+    },
+    {
+      "file": "scripts/start-coordinator.ps1",
+      "sha256": "5d4b30afca8b5286389eaa54d374cfda4794fc2862c4dad60fc84e3e89348f56",
+      "bytes": 235
+    },
+    {
+      "file": "scripts/worktree-permission-check.ps1",
+      "sha256": "469d3fe7365c6251812429c4ac702613cdf049304e3438db718d37d028e147cf",
+      "bytes": 586
+    },
+    {
+      "file": "server.py",
+      "sha256": "dd67de4fb630c02284f6fc07388937d25636f047bdac6dcafe21ae646ae17811",
+      "bytes": 14308
+    },
+    {
+      "file": "tests/test_coordinator.py",
+      "sha256": "d5fa7c6cfa7f10626439bcf65e5b781cb0680dcff8d8272d2245e0623513c112",
+      "bytes": 15448
+    },
+    {
+      "file": "tests/test_dashboard.py",
+      "sha256": "1f77992247ebb7c9136591c066f088f0ad80151557d77bdcacaafc8d26962143",
+      "bytes": 5345
+    },
+    {
+      "file": "tests/test_recovery.py",
+      "sha256": "e379e0eea3b77700311247b83a76c6e41951cdc2aeab85131fd25d1538bcda3b",
+      "bytes": 6532
+    },
+    {
+      "file": "tests/test_recovery_http.py",
+      "sha256": "640f1bfff41bf1a3a6de96db4a444fe6cae999ac625fb6d61f3b062e486a0913",
+      "bytes": 3462
+    },
+    {
+      "file": "web/dashboard.css",
+      "sha256": "ea366cc802bea344effed16d8a19d154d9d79ce1e46506e50cc9ac9a80e6136e",
+      "bytes": 11552
+    },
+    {
+      "file": "web/dashboard.js",
+      "sha256": "1fe2f5c3c2d0378e5a22983f1fa7416903618b2d5f845e982e95db526f2d18b5",
+      "bytes": 20877
+    },
+    {
+      "file": "web/index.html",
+      "sha256": "61a2ac301daca4f83c825c3a9405f14f9fabeec37c379764159d6e21b1a4e2ab",
+      "bytes": 5394
+    }
+  ]
+}

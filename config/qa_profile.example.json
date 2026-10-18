@@ -1,0 +1,4 @@
+{
+  "build": ["dotnet", "build", "PATH_TO_KTOOL_SOLUTION.sln", "--configuration", "Release"],
+  "tests": ["dotnet", "test", "PATH_TO_KTOOL_TEST_PROJECT.csproj", "--configuration", "Release", "--no-build"]
+}

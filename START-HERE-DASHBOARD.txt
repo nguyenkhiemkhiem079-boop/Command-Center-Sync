@@ -1,0 +1,8 @@
+K-TOOL Command Center v0.6 — Reliability & Recovery (PILOT)
+1. New setup: 01_SETUP.bat -> 02_START_DASHBOARD.bat
+2. Existing v0.3/v0.4/v0.5: STOP SERVER and old agent sessions; run UPGRADE_EXISTING_MCP.ps1 from EXTRACTED v0.6 folder.
+3. Open http://127.0.0.1:8876/ui -> Recovery Center.
+4. After startup active locks are FROZEN intentionally. Verify backup/old agents before resuming.
+5. Run independent tests: 03_TEST_REGISTRY.bat
+6. QA runner: README_VI.md and config/qa_profile.example.json.
+NO connected Antigravity Teamwork or Revit host PASS has been claimed.
