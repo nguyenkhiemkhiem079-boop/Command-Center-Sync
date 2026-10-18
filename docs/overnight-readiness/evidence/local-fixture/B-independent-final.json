@@ -1,0 +1,16 @@
+{
+  "id": "23ae932135042b9ca731a3c45f2b5ed0",
+  "at": "2026-10-18T17:48:05+00:00",
+  "task_id": "B",
+  "qa_round": 1,
+  "commit_sha": "d4c144e9de98b00d04a62e8bcc4856c368b914d2",
+  "baseline_sha": "4fc9f75af14ba88d644d5ed0aecef2905a309447",
+  "scope": "documentation/schedules",
+  "result": "PASS",
+  "build_exit": 0,
+  "tests_exit": 0,
+  "git_scope_pass": 1,
+  "clean_tree": 1,
+  "changed_paths": "[\"documentation/schedules/schedule.py\", \"documentation/schedules/test_schedule.py\"]",
+  "evidence_json": "{\"task_id\": \"B\", \"commit_sha\": \"d4c144e9de98b00d04a62e8bcc4856c368b914d2\", \"expected_sha\": \"d4c144e9de98b00d04a62e8bcc4856c368b914d2\", \"base_sha\": \"4fc9f75af14ba88d644d5ed0aecef2905a309447\", \"scope_gate\": {\"pass\": true, \"errors\": [], \"changed_paths\": [\"documentation/schedules/schedule.py\", \"documentation/schedules/test_schedule.py\"], \"entries\": [{\"status\": \"A\", \"path\": \"documentation/schedules/schedule.py\"}, {\"status\": \"A\", \"path\": \"documentation/schedules/test_schedule.py\"}], \"base_sha\": \"4fc9f75af14ba88d644d5ed0aecef2905a309447\", \"commit_sha\": \"d4c144e9de98b00d04a62e8bcc4856c368b914d2\", \"quarantine\": false}, \"quarantine\": false, \"git_root\": \"C:\\\\Users\\\\khiem.nguyen\\\\AppData\\\\Local\\\\Temp\\\\ktool-v07-e2e-ramjm372\\\\B\", \"diff\": [\"documentation/schedules/schedule.py\", \"documentation/schedules/test_schedule.py\"], \"git_verified\": true, \"path_check\": true, \"tree_clean\": true, \"postflight_head\": {\"exit\": 0, \"stdout\": \"d4c144e9de98b00d04a62e8bcc4856c368b914d2\\n\", \"stderr\": \"\"}, \"postflight_status\": {\"exit\": 0, \"stdout\": \"\", \"stderr\": \"\"}, \"baseline_ancestor\": true, \"profile_sha256\": \"60d8292f9487a2eb73ba5f5b6986fa04c0858b35ad81fbcd5132e297d4789e36\", \"build\": {\"exit\": 0, \"stdout\": \"\", \"stderr\": \"\"}, \"tests\": {\"exit\": 0, \"stdout\": \"\", \"stderr\": \"\"}, \"revit_host\": \"NOT_EXECUTED\", \"agent_sessions\": \"NOT_VERIFIED\"}"
+}

@@ -17,6 +17,7 @@ def backup(db_file:Path, backup_dir:Path):
     with closing(sqlite3.connect(str(db_file))) as src,closing(sqlite3.connect(str(out))) as dst:
         src.backup(dst)
         check=dst.execute('PRAGMA integrity_check').fetchone()[0]
+        if check!='ok':raise RuntimeError('SQLITE_BACKUP_INTEGRITY_FAILED')
     sha=hashlib.sha256(out.read_bytes()).hexdigest()
     manifest={'snapshot':out.name,'at_utc':label,'sha256':sha,'sqlite_integrity_check':check,
               'includes_oauth_tokens':False,'restoration':'MANUAL_ONLY'}

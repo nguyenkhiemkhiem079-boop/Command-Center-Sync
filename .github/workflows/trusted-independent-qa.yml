@@ -1,0 +1,294 @@
+name: Trusted Independent QA
+
+# This workflow is intentionally manual. It must be installed on and dispatched
+# from a separately protected default/development workflow branch. Scope checking
+# and full QA are separate controls; neither implies review or merge approval.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open PR number targeting integration/command-center-qa
+        required: true
+        type: string
+      base_sha:
+        description: Exact current protected integration branch head
+        required: true
+        type: string
+      candidate_sha:
+        description: Exact immutable PR head commit to inspect and test
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: trusted-qa-${{ inputs.pr_number }}-${{ inputs.candidate_sha }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: github.ref == 'refs/heads/feature/command-center-four-wave-oms' && github.actor == 'nguyenkhiemkhiem079-boop'
+    runs-on: windows-2022
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tree_sha: ${{ steps.inspect.outputs.tree_sha }}
+      paths_json: ${{ steps.inspect.outputs.paths }}
+      profile_digest: ${{ steps.inspect.outputs.profile_digest }}
+      suite_digest: ${{ steps.inspect.outputs.suite_digest }}
+    steps:
+      - name: Check out the workflow's exact trusted revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: workflow-source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the exact protected base
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.base_sha }}
+          path: trusted-base
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out candidate as Git data only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pinned Python minor version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+          check-latest: false
+      - name: Verify dispatch identity and current pull request binding
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CC_REPOSITORY: ${{ github.repository }}
+          CC_PR_NUMBER: ${{ inputs.pr_number }}
+          CC_BASE_SHA: ${{ inputs.base_sha }}
+          CC_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        shell: pwsh
+        run: >-
+          python workflow-source/ci/trusted_qa_attestor.py verify-pr
+          --workflow-source workflow-source
+          --repository $env:CC_REPOSITORY
+          --pr-number $env:CC_PR_NUMBER
+          --base-sha $env:CC_BASE_SHA
+          --candidate-sha $env:CC_CANDIDATE_SHA
+      - name: Inspect exact Git tree and trusted scope without executing candidate code
+        id: inspect
+        env:
+          CC_REPOSITORY: ${{ github.repository }}
+          CC_BASE_SHA: ${{ inputs.base_sha }}
+          CC_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        shell: pwsh
+        run: >-
+          python workflow-source/ci/trusted_qa_runner.py --inspect-only
+          --candidate-repo candidate
+          --trusted-base trusted-base
+          --trusted-workflow workflow-source
+          --base-sha $env:CC_BASE_SHA
+          --candidate-sha $env:CC_CANDIDATE_SHA
+          --assignment CI-PILOT
+          --repository $env:CC_REPOSITORY
+          --github-output $env:GITHUB_OUTPUT
+
+  qa:
+    needs: preflight
+    runs-on: windows-2022
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      qa_exit_code: ${{ steps.run_qa.outputs.qa_exit_code }}
+      commands_json: ${{ steps.run_qa.outputs.commands_json }}
+      dependency_evidence_json: ${{ steps.run_qa.outputs.dependency_evidence_json }}
+      qa_status: ${{ steps.run_qa.outputs.status }}
+      qa_step_outcome: ${{ steps.run_qa.outcome }}
+    steps:
+      - name: Check out the exact trusted workflow revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: workflow-source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the exact protected policy and test base
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.base_sha }}
+          path: trusted-base
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the candidate without running its configuration or scripts
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pinned Python minor version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+          check-latest: false
+      - name: Run protected profile, build and regression suite
+        id: run_qa
+        continue-on-error: true
+        env:
+          CC_REPOSITORY: ${{ github.repository }}
+          CC_BASE_SHA: ${{ inputs.base_sha }}
+          CC_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        shell: pwsh
+        run: >-
+          python workflow-source/ci/trusted_qa_runner.py
+          --candidate-repo candidate
+          --trusted-base trusted-base
+          --trusted-workflow workflow-source
+          --base-sha $env:CC_BASE_SHA
+          --candidate-sha $env:CC_CANDIDATE_SHA
+          --assignment CI-PILOT
+          --repository $env:CC_REPOSITORY
+          --report "$env:RUNNER_TEMP\ktool-qa-report.json"
+          --log "$env:RUNNER_TEMP\ktool-qa.log"
+          --install-dependencies
+          --github-output $env:GITHUB_OUTPUT
+      - name: Publish diagnostic log artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ktool-trusted-qa-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}\ktool-qa.log
+          if-no-files-found: error
+          retention-days: 14
+      - name: Fail the QA job when the protected runner reports nonzero exit
+        if: always() && steps.run_qa.outputs.qa_exit_code != '0'
+        shell: pwsh
+        run: exit 1
+
+  attest:
+    if: always() && needs.preflight.result == 'success'
+    needs: [preflight, qa]
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      attestations: write
+      checks: write
+      contents: read
+      id-token: write
+      pull-requests: read
+    steps:
+      - name: Check out the exact trusted workflow and attestor source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: workflow-source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out protected policy base and candidate Git data for revalidation
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.base_sha }}
+          path: trusted-base
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the immutable candidate for revalidation only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pinned Python minor version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+          check-latest: false
+      - name: Create report from workflow-controller outcome and independently revalidated Git data
+        id: report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CC_REPOSITORY: ${{ github.repository }}
+          CC_PR_NUMBER: ${{ inputs.pr_number }}
+          CC_BASE_SHA: ${{ inputs.base_sha }}
+          CC_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          QA_COMMANDS_JSON: ${{ needs.qa.outputs.commands_json }}
+          QA_DEPENDENCY_EVIDENCE_JSON: ${{ needs.qa.outputs.dependency_evidence_json }}
+          QA_QA_EXIT_CODE: ${{ needs.qa.outputs.qa_exit_code }}
+          QA_TREE_SHA: ${{ needs.preflight.outputs.tree_sha }}
+          QA_PROFILE_DIGEST: ${{ needs.preflight.outputs.profile_digest }}
+          QA_SUITE_DIGEST: ${{ needs.preflight.outputs.suite_digest }}
+          QA_PATHS_JSON: ${{ needs.preflight.outputs.paths_json }}
+          QA_JOB_RESULT: ${{ needs.qa.result }}
+          QA_STEP_OUTCOME: ${{ needs.qa.outputs.qa_step_outcome }}
+          QA_RUN_ID: ${{ github.run_id }}
+          QA_RUN_ATTEMPT: ${{ github.run_attempt }}
+          QA_ACTOR: ${{ github.actor }}
+          QA_WORKFLOW_REF: ${{ github.workflow_ref }}
+          QA_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        shell: pwsh
+        run: >-
+          python workflow-source/ci/trusted_qa_attestor.py create-report
+          --workflow-source workflow-source
+          --trusted-base trusted-base
+          --candidate-repo candidate
+          --repository $env:CC_REPOSITORY
+          --pr-number $env:CC_PR_NUMBER
+          --base-sha $env:CC_BASE_SHA
+          --candidate-sha $env:CC_CANDIDATE_SHA
+          --run-id $env:QA_RUN_ID
+          --run-attempt $env:QA_RUN_ATTEMPT
+          --test-job-result $env:QA_JOB_RESULT
+          --test-step-outcome $env:QA_STEP_OUTCOME
+          --test-exit-code $env:QA_QA_EXIT_CODE
+          --actor $env:QA_ACTOR
+          --workflow-ref $env:QA_WORKFLOW_REF
+          --workflow-sha $env:QA_WORKFLOW_SHA
+          --output "$env:RUNNER_TEMP\trusted-qa-result.json"
+          --github-output $env:GITHUB_OUTPUT
+      - name: Generate signed GitHub artifact provenance for the exact QA result
+        id: attest_report
+        if: always() && steps.report.outcome == 'success'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: ${{ runner.temp }}\trusted-qa-result.json
+      - name: Upload the signed report as a workflow artifact
+        if: always() && steps.report.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: trusted-qa-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}\trusted-qa-result.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish candidate-bound required check
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CC_REPOSITORY: ${{ github.repository }}
+          CC_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          CC_RUN_ID: ${{ github.run_id }}
+          CC_ATTESTATION_OK: ${{ steps.attest_report.outcome == 'success' }}
+          CC_REPORT_OK: ${{ steps.report.outcome == 'success' }}
+          CC_QA_OK: ${{ needs.qa.result == 'success' && needs.qa.outputs.qa_step_outcome == 'success' && needs.qa.outputs.qa_exit_code == '0' }}
+        shell: pwsh
+        run: >-
+          $passed = ($env:CC_ATTESTATION_OK -eq 'true' -and $env:CC_REPORT_OK -eq 'true' -and $env:CC_QA_OK -eq 'true');
+          $value = if ($passed) { 'true' } else { 'false' };
+          python workflow-source/ci/trusted_qa_attestor.py create-check
+          --repository $env:CC_REPOSITORY
+          --candidate-sha $env:CC_CANDIDATE_SHA
+          --run-id $env:CC_RUN_ID
+          --passed $value
+          --summary "See the linked signed report and workflow run. QA must pass independently; this check does not approve or merge the PR."
+      - name: Keep failed QA visible in the workflow result
+        if: always() && (needs.qa.result != 'success' || steps.report.outcome != 'success' || steps.attest_report.outcome != 'success')
+        shell: pwsh
+        run: exit 1

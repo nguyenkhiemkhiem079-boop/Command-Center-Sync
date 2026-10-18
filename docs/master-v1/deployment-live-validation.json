@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "installed_sha": "c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d",
+  "connections": [
+    {
+      "identity": "CODEX",
+      "transport": "REAL_STDIO_TO_INSTALLED_HTTP",
+      "status": "PASS",
+      "tool_count": 36,
+      "human_request_deadline_discovered": true,
+      "native_teamwork": "NOT_VERIFIED"
+    },
+    {
+      "identity": "ANTI-01",
+      "transport": "REAL_STDIO_TO_INSTALLED_HTTP",
+      "status": "PASS",
+      "tool_count": 36,
+      "human_request_deadline_discovered": true,
+      "native_teamwork": "NOT_VERIFIED"
+    },
+    {
+      "identity": "ANTI-02",
+      "transport": "REAL_STDIO_TO_INSTALLED_HTTP",
+      "status": "PASS",
+      "tool_count": 36,
+      "human_request_deadline_discovered": true,
+      "native_teamwork": "NOT_VERIFIED"
+    }
+  ],
+  "source_files_hash_verified": 100,
+  "credentials_unchanged": true,
+  "legacy_tasks_and_locks_unchanged": true,
+  "sqlite_integrity": "ok",
+  "human_request_schema_version": 2,
+  "approval_tools_exposed": false,
+  "real_antigravity": "NOT_EXECUTED",
+  "trusted_ci": "BLOCKED_NOT_CONFIGURED"
+}

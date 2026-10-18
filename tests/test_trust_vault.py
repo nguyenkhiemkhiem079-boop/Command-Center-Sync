@@ -21,6 +21,7 @@ class TrustVaultTests(unittest.TestCase):
         for name in ('profile','suite','artifact'): (self.root/name).write_text(name)
         self.commands=[{'argv':['python','tests.py'],'exit':0}]
         expected=dict(mission='M',task='T',iteration=1,identity='ANTI-01',epoch=3,repo='owner/repo',
+                      contract_hash='c'*64,workflow_revision='d'*64,verifier_identity='LOCAL_FIXTURE_RUNNER',approval_status='NOT_APPROVED',
                       base_sha=self.base,candidate_sha=self.head,tree_sha=self.tree,paths=['module/a'],
                       profile_digest=file_digest(self.root/'profile'),suite_digest=file_digest(self.root/'suite'))
         self.policy={'expected':expected,'commands_digest':digest(self.commands),'profile_path':str(self.root/'profile'),
@@ -62,6 +63,16 @@ class TrustVaultTests(unittest.TestCase):
     def test_subdirectory_is_not_repository_root(self):
         self.policy['repo_path']=str(self.repo/'module');self.evidence['trust_policy_digest']=digest(self.policy)
         self.assertEqual(self.check()['status'],'REJECTED')
+    def test_contract_revision_verifier_and_approval_are_bound(self):
+        for key in ('contract_hash','workflow_revision','verifier_identity','approval_status'):
+            original=self.evidence[key];self.evidence[key]='different'
+            self.assertEqual(self.check()['status'],'REJECTED')
+            self.evidence[key]=original
+
+    def test_local_result_cannot_be_rebound_to_approved(self):
+        self.rebind(approval_status='APPROVED')
+        self.assertEqual(self.check()['status'],'REJECTED')
+
     def test_missing_fields_rejected(self):
         del self.evidence['epoch'];self.assertEqual(self.check()['status'],'REJECTED')
     def test_binding_epoch_mismatch(self):

@@ -8,6 +8,7 @@
     <nav id="nav">
       <button data-page="overview" class="navitem selected"><span class="sym">▦</span> Dashboard</button>
       <button data-page="studio" class="navitem"><span class="sym">◈</span> Run Studio</button>
+      <button data-page="fleet" class="navitem"><span class="sym">⌘</span> Fleet Cockpit</button>
       <button data-page="tasks" class="navitem"><span class="sym">☷</span> Task Board <span class="navcount" id="taskCount">0</span></button>
       <button data-page="locks" class="navitem"><span class="sym">◇</span> Worksharing Locks</button>
       <button data-page="qa" class="navitem"><span class="sym">✓</span> Quality Assurance</button>
@@ -36,4 +37,5 @@
 <div class="modal-overlay" id="taskModal" hidden><div class="modal"><div class="modal-head"><div><div class="eyebrow">CODEX / TASK REGISTRY</div><h2>Tạo nhiệm vụ mới</h2></div><button class="modal-close" id="closeModal" aria-label="Đóng">×</button></div><form id="taskForm"><label>Task ID <input name="tid" placeholder="ARCH-011" maxlength="64" required></label><label>Wave ID <input name="wave_id" value="PILOT" maxlength="64" required></label><label>Tiêu đề <input name="title" placeholder="Fix Envelope Areas" maxlength="180" required></label><label>Scope / Phạm vi độc quyền <input name="scope" placeholder="KhimTools/Architectural/Envelope" required></label><label>Git base SHA thực tế (40 ký tự) <input name="base_sha" placeholder="Dán git rev-parse HEAD" minlength="40" maxlength="40" pattern="[a-fA-F0-9]{40}" required></label><label>Codex Preview Gate <select name="requires_preview"><option value="true" selected>Yêu cầu preview độc lập</option><option value="false">Không áp dụng (cần lý do trong contract)</option></select></label><label>Shared Core resources (ngăn cách bằng dấu phẩy) <input name="exclusive_resources" placeholder="core-rebar-api, shared-preview-contract"></label><label>Dependencies (Task IDs, ngăn cách bằng dấu phẩy) <input name="depends_on" placeholder="CORE-001"></label><label>Functional Contract <textarea name="contract" rows="5" placeholder="Mục tiêu, file được phép sửa, tiêu chí nghiệm thu, không tự giả định engineering..." required></textarea></label><div class="modal-actions"><button type="button" class="btn ghost" id="cancelModal">Hủy</button><button type="submit" class="btn primary">Tạo task</button></div></form></div></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="/ui/dashboard.js" defer></script>
+<script src="/ui/cockpit.js" defer></script>
 </body></html>

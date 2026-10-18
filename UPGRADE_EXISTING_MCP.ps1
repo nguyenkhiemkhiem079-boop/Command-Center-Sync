@@ -1,38 +1,29 @@
-param([string]$Target='C:\KTOOL\CommandCenter\MCP')
+param([string]$Target='C:\KTOOL\CommandCenter\MCP',[string]$Python='C:\KTOOL\CommandCenter\venv\Scripts\python.exe',[switch]$Apply)
 $ErrorActionPreference='Stop'
-$Source=Split-Path -Parent $MyInvocation.MyCommand.Path
-$SourceAbs=[IO.Path]::GetFullPath($Source).TrimEnd('\')
-$TargetAbs=[IO.Path]::GetFullPath($Target).TrimEnd('\')
-if(!(Test-Path -LiteralPath (Join-Path $Target 'server.py'))){throw "Installation not found at $Target. For first installation use 01_SETUP.bat."}
-$listener=Get-NetTCPConnection -LocalPort 8876 -State Listen -ErrorAction SilentlyContinue
-if($listener){throw 'Coordinator still listens on port 8876. STOP 02_START_DASHBOARD.bat / server.py, then retry.'}
-$Backup=Join-Path $Target ('backup-before-v06-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
-New-Item -ItemType Directory -Force -Path $Backup | Out-Null
-$PrivateDb=Join-Path $Target 'private\registry.db'
-if(Test-Path -LiteralPath $PrivateDb){
-  # SQLite online backup includes WAL transaction contents; do NOT use Copy-Item for a live WAL DB.
-  py -3 (Join-Path $Source 'backup_registry.py') --db $PrivateDb --out $Backup
-  if($LASTEXITCODE -ne 0){throw 'Database backup failed. No files updated.'}
+$Source=(Resolve-Path -LiteralPath $PSScriptRoot).Path
+$Target=(Resolve-Path -LiteralPath $Target).Path
+if($Source -eq $Target){throw 'Upgrade requires separate reviewed source staging directory'}
+if(!(Test-Path -LiteralPath (Join-Path $Target 'private/registry.db'))){throw 'Existing Registry required; no bootstrap or reset permitted'}
+$Names=@('registry.py','server.py','client_mcp.py','qa_runner.py','backup_registry.py','ci_scope_gate.py','orchestration.py','trust_vault.py','transaction_sync.py','recovery_manager.py','governance.py','cockpit.py','mission_recovery.py','worktree_manager.py','anti_runtime.py','VERSION','requirements.txt','constraints-windows-py312.txt')
+foreach($Folder in @('web','clients','scripts','docs','.github')){
+ $Base=Join-Path $Source $Folder
+ if(Test-Path -LiteralPath $Base){foreach($File in Get-ChildItem -LiteralPath $Base -File -Recurse){$Names+=($File.FullName.Substring($Source.Length+1))}}
 }
-if($SourceAbs -eq $TargetAbs){Write-Host 'Already running from target. Backup complete. No copy needed.';exit 0}
-$CodeFiles=@('registry.py','server.py','client_mcp.py','qa_runner.py','backup_registry.py','VERSION')
-foreach($name in $CodeFiles){
-  $src=Join-Path $Source $name
-  if(!(Test-Path -LiteralPath $src)){throw "Missing v0.6 source file: $src"}
-  $dest=Join-Path $Target $name
-  if(Test-Path -LiteralPath $dest){Copy-Item -LiteralPath $dest -Destination (Join-Path $Backup $name) -Force}
-  Copy-Item -LiteralPath $src -Destination $dest -Force
+foreach($Name in $Names){if(!(Test-Path -LiteralPath (Join-Path $Source $Name) -PathType Leaf)){throw "Missing required upgrade source $Name"}}
+if(!$Apply){[pscustomobject]@{mode='DRY_RUN';target=$Target;files=$Names;preserves='private credentials registry and unrelated local files';approval='Run -Apply only for owner-approved candidate while coordinator stopped'} | ConvertTo-Json -Depth 4;exit 0}
+if(Get-NetTCPConnection -LocalPort 8876 -State Listen -ErrorAction SilentlyContinue){throw 'Stop verified coordinator before approved upgrade; this script kills no processes'}
+if(!(Test-Path -LiteralPath $Python)){throw 'Configured existing venv Python required; no implicit install'}
+$Backup=Join-Path (Split-Path -Parent $Target) ('deployments/upgrade-'+[guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $Backup | Out-Null
+& (Join-Path $Source 'scripts/protect-private-path.ps1') -LiteralPath $Backup | Out-Null
+& $Python (Join-Path $Source 'backup_registry.py') --db (Join-Path $Target 'private/registry.db') --out $Backup
+if($LASTEXITCODE -ne 0){throw 'SQLite backup failed; no source updated'}
+$Manifest=@()
+foreach($Name in $Names){
+ $From=Join-Path $Source $Name;$To=Join-Path $Target $Name;$Old=$null
+ if(Test-Path -LiteralPath $To){$Old=(Get-FileHash -LiteralPath $To -Algorithm SHA256).Hash;$Saved=Join-Path $Backup ('source-before/'+$Name);New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Saved) | Out-Null;Copy-Item -LiteralPath $To -Destination $Saved}
+ $Manifest += [pscustomobject]@{file=$Name;old_sha256=$Old;new_sha256=(Get-FileHash -LiteralPath $From -Algorithm SHA256).Hash}
 }
-foreach($folder in @('web','docs')){
-  $from=Join-Path $Source $folder;$to=Join-Path $Target $folder
-  if(Test-Path -LiteralPath $to){Copy-Item -LiteralPath $to -Destination (Join-Path $Backup $folder) -Recurse -Force}
-  New-Item -ItemType Directory -Path $to -Force | Out-Null
-  Copy-Item -LiteralPath (Join-Path $from '*') -Destination $to -Recurse -Force
-}
-foreach($name in @('02_START_DASHBOARD.bat','03_TEST_REGISTRY.bat','README_VI.md','README_DASHBOARD_VI.md','START-HERE.txt','START-HERE-DASHBOARD.txt')){
-  Copy-Item -LiteralPath (Join-Path $Source $name) -Destination (Join-Path $Target $name) -Force
-}
-Write-Host 'v0.6 files updated. Existing tokens/private and SQLite database preserved.'
-Write-Host "SQLite backup and previous source copy: $Backup"
-Write-Warning 'On next startup, any previously ACTIVE ownership locks will become FROZEN (fail closed).'
-Write-Host 'Restart coordinator and each MCP stdio client to load new tools.'
+$Manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $Backup 'source-manifest.json') -Encoding UTF8
+foreach($Name in $Names){$To=Join-Path $Target $Name;New-Item -ItemType Directory -Force -Path (Split-Path -Parent $To) | Out-Null;Copy-Item -LiteralPath (Join-Path $Source $Name) -Destination $To -Force}
+Write-Output "Source upgraded with protected backup at $Backup. Existing private data unchanged. Startup performs additive migration after another backup. Restart only owner-approved candidate; validate integrity/RBAC/frozen locks. Rollback uses source-manifest/source-before; never overwrite live DB."

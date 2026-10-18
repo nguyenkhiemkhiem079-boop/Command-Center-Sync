@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 import sqlite3
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from registry import Denied, clean_scope, collide
 
 
@@ -55,10 +55,26 @@ class ControlStore:
             CREATE TABLE IF NOT EXISTS cc_human_requests(id TEXT PRIMARY KEY,mission TEXT NOT NULL,assignment TEXT,target TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',created TEXT NOT NULL,response TEXT);
             CREATE TABLE IF NOT EXISTS cc_feedback(id INTEGER PRIMARY KEY AUTOINCREMENT,assignment TEXT NOT NULL,iteration INTEGER NOT NULL,issues TEXT NOT NULL,fingerprint TEXT NOT NULL,evidence TEXT NOT NULL,candidate TEXT NOT NULL,created TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS cc_events(id INTEGER PRIMARY KEY AUTOINCREMENT,at TEXT NOT NULL,actor TEXT NOT NULL,kind TEXT NOT NULL,target TEXT,body TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS cc_deliveries(id TEXT PRIMARY KEY,assignment TEXT NOT NULL,owner TEXT NOT NULL,epoch INTEGER NOT NULL,payload TEXT NOT NULL,payload_hash TEXT NOT NULL,status TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,ack_deadline TEXT NOT NULL,created TEXT NOT NULL,acknowledged TEXT,UNIQUE(assignment,epoch));
+            CREATE TABLE IF NOT EXISTS cc_supervisor_summaries(mission TEXT PRIMARY KEY,body TEXT NOT NULL,updated TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS cc_worktrees(path TEXT PRIMARY KEY,owner TEXT NOT NULL,branch TEXT NOT NULL,common_dir TEXT NOT NULL,created TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS cc_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
             INSERT OR IGNORE INTO cc_meta VALUES('mode','NORMAL');
             INSERT OR IGNORE INTO cc_meta VALUES('epoch','0');
             ''')
+            # Additive, serialized migration; retain every existing request and token store.
+            db.execute('BEGIN IMMEDIATE')
+            try:
+                version=db.execute("SELECT value FROM cc_meta WHERE key='human_requests_schema_version'").fetchone()
+                if version and int(version[0])>2: raise ValueError('NEWER_HUMAN_REQUEST_SCHEMA')
+                columns={r['name'] for r in db.execute('PRAGMA table_info(cc_human_requests)')}
+                for name in ('deadline','decided_at'):
+                    if name not in columns: db.execute('ALTER TABLE cc_human_requests ADD COLUMN '+name+' TEXT')
+                db.execute("INSERT OR REPLACE INTO cc_meta VALUES('human_requests_schema_version','2')")
+                db.execute('COMMIT')
+            except Exception:
+                db.execute('ROLLBACK');raise
+
 
     @contextmanager
     def connection(self):
@@ -210,6 +226,11 @@ class ControlStore:
                 db.execute("UPDATE cc_locks SET state='DELEGATED' WHERE assignment=?",(parent,))
             db.execute('INSERT INTO cc_waves(id,mission,parent,state,revision,created) VALUES(?,?,?,?,?,?)',(wave,mission,parent,'WAITING',m['revision'],stamp()))
             for t in prepared:
+                from worktree_manager import inspect as inspect_worktree
+                worktree=inspect_worktree(t['repo'],t['base_sha'])
+                bound=db.execute('SELECT * FROM cc_worktrees WHERE path=?',(worktree['path'],)).fetchone()
+                if bound and (bound['owner']!=t['owner'] or bound['branch']!=worktree['branch'] or bound['common_dir']!=worktree['common_dir']):raise Denied('CANT_EDIT_WORKTREE_OWNER')
+                db.execute('INSERT OR IGNORE INTO cc_worktrees VALUES(?,?,?,?,?)',(worktree['path'],t['owner'],worktree['branch'],worktree['common_dir'],stamp()))
                 existing=db.execute('SELECT * FROM cc_teams WHERE id=?',(t['team'],)).fetchone()
                 if existing and (existing['owner']!=t['owner'] or existing['mission']!=mission): raise Denied('TEAM_OWNER_MISMATCH')
                 db.execute('INSERT OR IGNORE INTO cc_teams VALUES(?,?,?)',(t['team'],mission,t['owner']))
@@ -241,8 +262,10 @@ class ControlStore:
         for resource in resources: db.execute('INSERT OR IGNORE INTO cc_resource_locks VALUES(?,?,?,?)',(resource,t['id'],t['owner'],epoch))
         return epoch
 
-    def dispatch(self,actor,capabilities=None):
+    def dispatch(self,actor,capabilities=None,availability=None,ack_timeout_seconds=60):
         require(actor,('CODEX','CONTROLLER'));capabilities=capabilities or {'ANTI-01':[],'ANTI-02':[]}
+        if type(ack_timeout_seconds) is not int or not 1<=ack_timeout_seconds<=3600: raise ValueError('ACK_TIMEOUT_1_TO_3600')
+        if availability is not None and not isinstance(availability,dict): raise ValueError('AVAILABILITY_MAPPING_REQUIRED')
         result=[];pending=[]
         with self.transaction() as db:
             self.active_control(db)
@@ -252,15 +275,38 @@ class ControlStore:
                 busy=db.execute("SELECT count(*) FROM cc_assignments WHERE status NOT IN ('QUEUED','ACCEPTED','INTEGRATED','FAILED','WAITING_FOR_CHILDREN','CHILDREN_ACCEPTED_APPROVAL_PENDING')").fetchone()[0]
                 if busy>=policy.get('max_workers',2): pending.append({'id':t['id'],'reason':'RESOURCE_LIMIT'});continue
                 if db.execute("SELECT 1 FROM cc_assignments WHERE owner=? AND status NOT IN ('QUEUED','ACCEPTED','INTEGRATED','FAILED','WAITING_FOR_CHILDREN','CHILDREN_ACCEPTED_APPROVAL_PENDING')",(t['owner'],)).fetchone(): pending.append({'id':t['id'],'reason':'AGENT_BUSY'});continue
-                if not set(json.loads(t['capabilities']))<=set(capabilities.get(t['owner'],[])): pending.append({'id':t['id'],'reason':'CAPABILITY_UNAVAILABLE'});continue
+                if not policy.get('sandbox',False):
+                    pending.append({'id':t['id'],'reason':'VERIFIED_RUNTIME_ATTESTATION_REQUIRED'});continue
+                agent=capabilities.get(t['owner'],[])
+                if isinstance(agent,dict):
+                    if agent.get('available') is not True: pending.append({'id':t['id'],'reason':'AGENT_UNAVAILABLE'});continue
+                    scope=[clean_scope(p) for p in agent.get('allowed_paths',[])]
+                    if not scope or any(not any(path==a or path.startswith(a+'/') for a in scope) for path in json.loads(t['allowed'])):
+                        pending.append({'id':t['id'],'reason':'CAPABILITY_SCOPE_UNAVAILABLE'});continue
+                    agent=agent.get('capabilities',[])
+                if availability is not None and availability.get(t['owner']) is not True:
+                    pending.append({'id':t['id'],'reason':'AGENT_UNAVAILABLE'});continue
+                if not set(json.loads(t['capabilities']))<=set(agent): pending.append({'id':t['id'],'reason':'CAPABILITY_UNAVAILABLE'});continue
                 deps=json.loads(t['dependencies'])
                 if any(self.row(db,'cc_assignments',d)['status']!='INTEGRATED' for d in deps): pending.append({'id':t['id'],'reason':'DEPENDENCY_PENDING'});continue
-                try: epoch=self.acquire(db,t)
+                try:
+                    self._verify_worktree(db,t)
+                    epoch=self.acquire(db,t)
                 except Denied as exc: pending.append({'id':t['id'],'reason':str(exc)});continue
                 db.execute("UPDATE cc_assignments SET status='TASK_ASSIGNED',epoch=?,attempt=attempt+1,updated=? WHERE id=?",(epoch,stamp(),t['id']))
-                result.append({'id':t['id'],'owner':t['owner'],'epoch':epoch})
+                current=self.row(db,'cc_assignments',t['id'])
+                delivery=self._enqueue_delivery(db,current,ack_timeout_seconds)
+                result.append({'id':t['id'],'owner':t['owner'],'epoch':epoch,'delivery_id':delivery})
                 self.event(db,actor,'TASK_ASSIGNED',t['id'],result[-1])
         return {'assigned':result,'pending':pending}
+
+    def _verify_worktree(self,db,t,candidate=None):
+        from worktree_manager import inspect as inspect_worktree
+        observed=inspect_worktree(t['repo'],t['base_sha'],candidate)
+        bound=db.execute('SELECT * FROM cc_worktrees WHERE path=?',(observed['path'],)).fetchone()
+        if bound is None or bound['owner']!=t['owner'] or bound['branch']!=observed['branch'] or bound['common_dir']!=observed['common_dir']:
+            raise Denied('WORKTREE_OWNERSHIP_REVALIDATION_REQUIRED')
+        return observed
 
     def get_assignment(self,actor,assignment):
         with self.connection() as db:
@@ -273,13 +319,92 @@ class ControlStore:
         if type(epoch) is not int or t['epoch']!=epoch or t['status'] not in ('TASK_ASSIGNED','DEVELOPMENT','SELF_QA','SYNC_REQUEST','WAITING_FOR_CODEX_REVIEW','CHANGES_REQUESTED'): raise Denied('STALE_OR_UNAUTHORIZED_EPOCH',403)
         self.active_control(db);return t
 
-    def acknowledge(self,actor,assignment,epoch,contract_hash):
+    def _enqueue_delivery(self,db,t,ack_timeout_seconds=60):
+        payload={key:t[key] for key in ('id','mission','wave','owner','epoch','contract_hash','revision','repo','base_sha','allowed','readonly','forbidden','resources','acceptance','capabilities')}
+        h=digest(payload);delivery=digest({'assignment':t['id'],'epoch':t['epoch'],'payload_hash':h})
+        db.execute('INSERT INTO cc_deliveries(id,assignment,owner,epoch,payload,payload_hash,status,ack_deadline,created) VALUES(?,?,?,?,?,?,?,?,?)',
+                   (delivery,t['id'],t['owner'],t['epoch'],encoded(payload),h,'PENDING',(datetime.now(timezone.utc)+timedelta(seconds=ack_timeout_seconds)).isoformat(),stamp()))
+        self.event(db,'CONTROLLER','DELIVERY_ENQUEUED',t['id'],{'delivery_id':delivery,'epoch':t['epoch']})
+        return delivery
+
+    def delivery_outbox(self,actor,assignment=None):
+        require(actor,('CODEX','CONTROLLER','ANTI-01','ANTI-02'))
+        with self.connection() as db:
+            query='SELECT * FROM cc_deliveries WHERE 1=1';args=[]
+            if actor in ('ANTI-01','ANTI-02'): query+=' AND owner=?';args.append(actor)
+            if assignment is not None:
+                t=self.row(db,'cc_assignments',assignment);require(actor,('CODEX','CONTROLLER',t['owner']))
+                query+=' AND assignment=?';args.append(assignment)
+            return [dict(r) for r in db.execute(query+' ORDER BY created,id',args)]
+
+    def _expire_delivery(self,db,delivery,now):
+        if delivery['status'] not in ('PENDING','SENT') or datetime.fromisoformat(delivery['ack_deadline'])>now: return False
+        db.execute("UPDATE cc_deliveries SET status='UNCERTAIN' WHERE id=?",(delivery['id'],))
+        db.execute("UPDATE cc_assignments SET status='FROZEN',updated=? WHERE id=? AND epoch=? AND status='TASK_ASSIGNED'",(stamp(),delivery['assignment'],delivery['epoch']))
+        db.execute("UPDATE cc_locks SET state='FROZEN' WHERE assignment=? AND epoch=?",(delivery['assignment'],delivery['epoch']))
+        self.event(db,'CONTROLLER','DELIVERY_TIMEOUT_FROZEN',delivery['assignment'],{'delivery_id':delivery['id'],'epoch':delivery['epoch'],'replay_execution':False})
+        return True
+
+    def delivery_attempt(self,actor,delivery_id):
+        require(actor,('CODEX','CONTROLLER'))
+        expired=False
+        with self.transaction() as db:
+            self.active_control(db)
+            delivery=db.execute('SELECT * FROM cc_deliveries WHERE id=?',(delivery_id,)).fetchone()
+            if delivery is None: raise Denied('DELIVERY_NOT_FOUND')
+            expired=self._expire_delivery(db,delivery,datetime.now(timezone.utc))
+            if not expired:
+                t=self.row(db,'cc_assignments',delivery['assignment'])
+                if delivery['status'] not in ('PENDING','SENT') or t['epoch']!=delivery['epoch'] or t['status']!='TASK_ASSIGNED': raise Denied('DELIVERY_NOT_RETRYABLE')
+                if digest(json.loads(delivery['payload']))!=delivery['payload_hash']: raise Denied('DELIVERY_TAMPERED')
+                db.execute("UPDATE cc_deliveries SET status='SENT',attempts=attempts+1 WHERE id=?",(delivery_id,))
+                self.event(db,actor,'DELIVERY_ATTEMPT',delivery['assignment'],{'delivery_id':delivery_id,'attempt':delivery['attempts']+1,'execution_started':False})
+                result=dict(delivery);result['status']='SENT';result['attempts']+=1
+        if expired: raise Denied('DELIVERY_TIMEOUT_FROZEN')
+        return result
+
+    def acknowledge(self,actor,assignment,epoch,contract_hash,delivery_id=None):
+        expired=False
         with self.transaction() as db:
             t=self.owned(db,actor,assignment,epoch)
             if contract_hash!=t['contract_hash']: raise Denied('STALE_CONTRACT')
             if t['status'] not in ('TASK_ASSIGNED','DEVELOPMENT'): raise Denied('INVALID_ACK_STATE')
-            db.execute("UPDATE cc_assignments SET status='DEVELOPMENT',updated=? WHERE id=?",(stamp(),assignment))
-            self.event(db,actor,'TASK_ACKNOWLEDGED',assignment,{'epoch':epoch,'contract_hash':contract_hash})
+            delivery=db.execute('SELECT * FROM cc_deliveries WHERE assignment=? AND epoch=?',(assignment,epoch)).fetchone()
+            if delivery is None: raise Denied('DELIVERY_NOT_FOUND')
+            if delivery_id is not None and delivery['id']!=delivery_id: raise Denied('WRONG_DELIVERY')
+            if delivery['status']=='ACKED': return {'delivery_id':delivery['id'],'status':'ACKED','idempotent':True}
+            expired=self._expire_delivery(db,delivery,datetime.now(timezone.utc))
+            if not expired:
+                if delivery['status'] not in ('PENDING','SENT') or digest(json.loads(delivery['payload']))!=delivery['payload_hash']: raise Denied('DELIVERY_CONTEXT_UNCERTAIN')
+                db.execute("UPDATE cc_deliveries SET status='ACKED',acknowledged=? WHERE id=?",(stamp(),delivery['id']))
+                db.execute("UPDATE cc_assignments SET status='DEVELOPMENT',updated=? WHERE id=?",(stamp(),assignment))
+                self.event(db,actor,'TASK_ACKNOWLEDGED',assignment,{'epoch':epoch,'contract_hash':contract_hash,'delivery_id':delivery['id']})
+        if expired: raise Denied('DELIVERY_TIMEOUT_FROZEN')
+        return {'delivery_id':delivery['id'],'status':'ACKED','idempotent':False}
+
+    def supervisor_tick(self,actor='CONTROLLER',now=None):
+        require(actor,('CODEX','CONTROLLER'))
+        now=now or datetime.now(timezone.utc)
+        if not isinstance(now,datetime) or now.tzinfo is None: raise ValueError('TIMEZONE_REQUIRED')
+        with self.transaction() as db:
+            frozen=[]
+            for delivery in db.execute("SELECT * FROM cc_deliveries WHERE status IN ('PENDING','SENT')").fetchall():
+                if self._expire_delivery(db,delivery,now): frozen.append(delivery['assignment'])
+            summaries=[]
+            for mission in db.execute('SELECT * FROM cc_missions').fetchall():
+                tasks=[dict(t) for t in db.execute('SELECT * FROM cc_assignments WHERE mission=?',(mission['id'],))]
+                counts={}
+                for t in tasks: counts[t['status']]=counts.get(t['status'],0)+1
+                overdue=[t['id'] for t in tasks if t['deadline'] and datetime.fromisoformat(t['deadline'])<=now and t['status'] not in ('INTEGRATED','FAILED')]
+                human_overdue=[r['id'] for r in db.execute("SELECT * FROM cc_human_requests WHERE mission=? AND status='PENDING'",(mission['id'],)) if r['deadline'] and datetime.fromisoformat(r['deadline'])<=now]
+                states=[t['status'] for t in tasks]
+                state='COMPLETE' if states and all(x=='INTEGRATED' for x in states) else 'APPROVAL_PENDING' if states and all(x in ('ACCEPTED','INTEGRATED','CHILDREN_ACCEPTED_APPROVAL_PENDING') for x in states) else 'BLOCKED' if any(x in ('FROZEN','FAILED') for x in states) or self.mode(db) in ('EMERGENCY_STOP','RECOVERY_REQUIRED') else 'WAITING_FOR_CODEX' if self.mode(db)=='LEAD_UNAVAILABLE' else 'ACTIVE'
+                summary={'mission':mission['id'],'status':state,'counts':counts,'overdue_assignments':overdue,'overdue_human_requests':human_overdue,'supervisor_mode':self.mode(db),'approval_granted':False,'source':'CONTROLLER_SQLITE','as_of':now.isoformat()}
+                db.execute('UPDATE cc_missions SET status=? WHERE id=?',(state,mission['id']))
+                db.execute('INSERT OR REPLACE INTO cc_supervisor_summaries VALUES(?,?,?)',(mission['id'],encoded(summary),stamp()))
+                summaries.append(summary)
+            self.event(db,actor,'SUPERVISOR_SUMMARY','',{'missions':len(summaries),'new_timeout_freezes':frozen,'approval_granted':False})
+            return {'summaries':summaries,'frozen':frozen,'approval_granted':False}
 
     def checkpoint(self,actor,assignment,epoch,commit,changed_paths,build_evidence,blockers=None,artifacts=None):
         with self.connection() as db:
@@ -292,6 +417,7 @@ class ControlStore:
         modified=[]
         p=subprocess.run(['git','-C',repo,'diff','--name-only','--no-renames','-z',t['base_sha'],commit],capture_output=True,check=True)
         modified=[clean_scope(s.decode()) for s in p.stdout.split(b'\0') if s]
+        with self.connection() as db:self._verify_worktree(db,t,commit)
         allowed=json.loads(t['allowed']);forbidden=json.loads(t['forbidden'])+json.loads(t['readonly'])
         ancestry=subprocess.run(['git','-C',repo,'merge-base','--is-ancestor',t['base_sha'],commit],capture_output=True)
         if ancestry.returncode or not modified or sorted(modified)!=sorted(clean_scope(p) for p in changed_paths): raise Denied('CHECKPOINT_DIFF_MISMATCH')
@@ -332,7 +458,8 @@ class ControlStore:
             if self.mode(db)!='NORMAL': raise Denied('CODEX_REVIEW_UNAVAILABLE')
             t=self.row(db,'cc_assignments',assignment)
             if t['status'] not in ('SYNC_REQUEST','WAITING_FOR_CODEX_REVIEW'): raise Denied('REVIEW_NOT_PENDING')
-            fp=digest([{k:i[k] for k in ('id','path','expected','actual')} for i in issues])
+            roots=[re.sub(r'\s+',' ',str(i['root_cause']).strip().casefold()) for i in issues if isinstance(i.get('root_cause'),str) and i['root_cause'].strip()]
+            fp=digest({'root_causes':sorted(set(roots))}) if len(roots)==len(issues) else digest([{k:i[k] for k in ('id','path','expected','actual')} for i in issues])
             previous=db.execute('SELECT fingerprint FROM cc_feedback WHERE assignment=? ORDER BY id DESC LIMIT 2',(assignment,)).fetchall()
             frozen=len(previous)==2 and all(r[0]==fp for r in previous)
             db.execute('INSERT INTO cc_feedback(assignment,iteration,issues,fingerprint,evidence,candidate,created) VALUES(?,?,?,?,?,?,?)',
@@ -412,9 +539,18 @@ class ControlStore:
             db.execute("UPDATE cc_steering SET status='ACKNOWLEDGED',acknowledged=? WHERE id=?",(stamp(),steering))
             self.event(db,actor,'STEERING_ACKNOWLEDGED',steering,{'target':target})
 
-    def human_request(self,actor,mission,kind,body,assignment=None):
+    def human_request(self,actor,mission,kind,body,assignment=None,deadline=None):
         require(actor,('CODEX','ANTI-01','ANTI-02'))
-        if kind not in ('input','direction','review','approval'): raise ValueError('typed request required')
+        if kind not in ('input','direction','review','approval','INPUT_REQUIRED','DIRECTION_REQUIRED',
+                        'PERMISSION_REQUIRED','CONTRACT_CHANGE','MERGE_APPROVAL','RELEASE_APPROVAL'):
+            raise ValueError('typed request required')
+        if deadline is not None:
+            if not isinstance(deadline,str): raise ValueError('timezone-aware deadline required')
+            try: parsed=datetime.fromisoformat(deadline.replace('Z','+00:00'))
+            except ValueError: raise ValueError('timezone-aware deadline required') from None
+            if parsed.tzinfo is None: raise ValueError('timezone-aware deadline required')
+            if parsed<=datetime.now(timezone.utc): raise ValueError('future deadline required')
+            deadline=parsed.astimezone(timezone.utc).isoformat()
         if not isinstance(body,str) or not 1<=len(body)<=4000: raise ValueError('request body required')
         with self.transaction() as db:
             self.row(db,'cc_missions',mission)
@@ -422,8 +558,10 @@ class ControlStore:
                 t=self.row(db,'cc_assignments',assignment);require(actor,('CODEX',t['owner']))
                 if t['mission']!=mission: raise Denied('MISSION_MISMATCH')
             elif actor!='CODEX': raise Denied('ASSIGNMENT_REQUIRED')
-            h=digest({'mission':mission,'assignment':assignment,'kind':kind,'body':body})
-            db.execute('INSERT OR IGNORE INTO cc_human_requests(id,mission,assignment,target,kind,body,created) VALUES(?,?,?,?,?,?,?)',(h,mission,assignment,'OWNER',kind,body,stamp()))
+            identity={'mission':mission,'assignment':assignment,'kind':kind,'body':body}
+            if deadline is not None: identity['deadline']=deadline
+            h=digest(identity)
+            db.execute('INSERT OR IGNORE INTO cc_human_requests(id,mission,assignment,target,kind,body,created,deadline) VALUES(?,?,?,?,?,?,?,?)',(h,mission,assignment,'OWNER',kind,body,stamp(),deadline))
             self.event(db,actor,'HUMAN_REQUEST',h,{'kind':kind,'privilege_granted':False})
             return h
 
@@ -433,7 +571,9 @@ class ControlStore:
         with self.transaction() as db:
             r=self.row(db,'cc_human_requests',request)
             if r['status']!='PENDING': raise Denied('REQUEST_ALREADY_RESOLVED')
-            db.execute("UPDATE cc_human_requests SET status='RESOLVED',response=? WHERE id=?",(encoded(response),request))
+            if r['deadline'] and datetime.fromisoformat(r['deadline'])<=datetime.now(timezone.utc):
+                raise Denied('REQUEST_EXPIRED')
+            db.execute("UPDATE cc_human_requests SET status='RESOLVED',response=?,decided_at=? WHERE id=?",(encoded(response),stamp(),request))
             self.event(db,actor,'HUMAN_REQUEST_RESOLVED',request,{'privilege_granted':False})
 
     def set_mode(self,actor,mode):
@@ -507,6 +647,8 @@ class ControlStore:
             db.execute("UPDATE cc_locks SET state='ACTIVE',epoch=? WHERE assignment=?",(epoch,assignment))
             db.execute('UPDATE cc_resource_locks SET epoch=? WHERE assignment=?',(epoch,assignment))
             db.execute("UPDATE cc_meta SET value='NORMAL' WHERE key='mode'")
+            db.execute("UPDATE cc_deliveries SET status='SUPERSEDED' WHERE assignment=? AND status IN ('PENDING','SENT','UNCERTAIN')",(assignment,))
+            self._enqueue_delivery(db,self.row(db,'cc_assignments',assignment))
             self.event(db,actor,'SAFE_RESUME',assignment,{'epoch':epoch,'checkpoint_id':t['checkpoint_id']})
             return epoch
 
@@ -516,7 +658,7 @@ class ControlStore:
             result={name:[dict(r) for r in db.execute('SELECT * FROM '+table)] for name,table in (
                 ('missions','cc_missions'),('waves','cc_waves'),('teams','cc_teams'),('assignments','cc_assignments'),
                 ('subagents','cc_subagents'),('revisions','cc_revisions'),('steering','cc_steering'),('human_requests','cc_human_requests'),
-                ('events','cc_events'),('checkpoints','cc_checkpoints'),('contracts','cc_contracts'),('feedback','cc_feedback'))}
+                ('events','cc_events'),('deliveries','cc_deliveries'),('supervisor_summaries','cc_supervisor_summaries'),('checkpoints','cc_checkpoints'),('contracts','cc_contracts'),('feedback','cc_feedback'))}
             result['supervisor_mode']=self.mode(db)
             result['performance']=[{'agent':owner,'source':'CONTROLLER_MEASURED','accepted_tasks':sum(t['owner']==owner and t['status'] in ('ACCEPTED','INTEGRATED') for t in result['assignments']),
                 'correction_iterations':sum(t['review_iteration']-1 for t in result['assignments'] if t['owner']==owner),

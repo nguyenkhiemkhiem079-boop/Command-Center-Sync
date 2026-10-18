@@ -11,9 +11,29 @@ from urllib.parse import urlsplit
 from registry import Registry, identify, Denied
 
 OPS = ('status','heartbeat','create_task','assign_task','get_task','checkpoint','submit_self_qa','submit_result','acknowledge_feedback','feedback_history','freeze','review_task','read_review','close_task','report','audit','control_status','emergency_stop','resume_control','resume_frozen_task','stale_sweep','qa_evidence')
-CONTROL_OPS = ('control_snapshot','get_assignment','acknowledge_assignment','assignment_checkpoint','assignment_submit_claim','steering_ack','propose_contract','read_approved_contract','publish_revision','create_mission','queue_wave','dispatch','steer','human_request')
+CONTROL_OPS = ('control_snapshot','get_assignment','acknowledge_assignment','assignment_checkpoint','assignment_submit_claim','steering_ack','propose_contract','read_approved_contract','publish_revision','create_mission','queue_wave','dispatch','steer','human_request','delivery_outbox','delivery_attempt','supervisor_tick','mission_result','assignment_feedback','assignment_feedback_ack')
+GOV_OPS = ('governance_identity','governance_authorize','knowledge_publish','knowledge_history','request_bound_approval','bound_approval_history','decide_bound_approval')
 WEB = Path(__file__).resolve().with_name('web')
 SESSION_TTL = 8*3600
+
+
+class SupervisedHTTPServer(ThreadingHTTPServer):
+    """Periodic deterministic controller summaries; no model calls or dispatch."""
+    def __init__(self,address,handler,control,interval=10):
+        self.control=control;self.supervisor_interval=interval;self._next_supervisor=0
+        self.supervisor_last_success=None;self.supervisor_error=None
+        super().__init__(address,handler)
+
+    def service_actions(self):
+        if time.monotonic()<self._next_supervisor:return
+        self._next_supervisor=time.monotonic()+self.supervisor_interval
+        try:
+            self.control.supervisor_tick('CONTROLLER')
+            self.supervisor_last_success=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+            self.supervisor_error=None
+        except Exception:
+            self.supervisor_error='SUPERVISOR_TICK_FAILED'
+            print('SUPERVISOR_TICK_FAILED: no automatic approval or resume performed',flush=True)
 
 
 def handler_factory(store: Registry, hashes: dict):
@@ -23,11 +43,11 @@ def handler_factory(store: Registry, hashes: dict):
 
     def control_call(role,op,args):
         c=controller()
-        if op not in ('control_snapshot','get_assignment','read_approved_contract','human_request','steering_ack'):
+        if op not in ('control_snapshot','get_assignment','read_approved_contract','human_request','steering_ack','delivery_outbox','mission_result'):
             if store.control_status('CODEX')['mode']!='NORMAL':raise Denied('LEGACY_CONTROL_FROZEN',423)
         if op=='control_snapshot':return c.snapshot(role)
         if op=='get_assignment':return c.get_assignment(role,args['assignment'])
-        if op=='acknowledge_assignment':return c.acknowledge(role,args['assignment'],args['epoch'],args['contract_hash'])
+        if op=='acknowledge_assignment':return c.acknowledge(role,args['assignment'],args['epoch'],args['contract_hash'],args.get('delivery_id'))
         if op=='assignment_checkpoint':return c.checkpoint(role,args['assignment'],args['epoch'],args['commit'],args['changed_paths'],args['build_evidence'],args.get('blockers'),args.get('artifacts'))
         if op=='assignment_submit_claim':return c.submit_claim(role,args['assignment'],args['epoch'])
         if op=='steering_ack':return c.acknowledge_steering(role,args['steering'],args['target'])
@@ -36,10 +56,31 @@ def handler_factory(store: Registry, hashes: dict):
         if op=='publish_revision':return c.publish_revision(role,args['content'])
         if op=='create_mission':return c.create_mission(role,args['mission'],args['revision'],args.get('policy'))
         if op=='queue_wave':return c.queue_wave(role,args['mission'],args['wave'],args['assignments'],args.get('parent'))
-        if op=='dispatch':return c.dispatch(role,args.get('capabilities'))
+        if op=='dispatch':return c.dispatch(role,args.get('capabilities'),args.get('availability'),args.get('ack_timeout_seconds',60))
         if op=='steer':return c.steer(role,args['mission'],args['assignment'],args['target'],args['context_version'],args['instruction'])
-        if op=='human_request':return c.human_request(role,args['mission'],args['kind'],args['body'],args.get('assignment'))
+        if op=='assignment_feedback':return c.feedback(role,args['assignment'],args['issues'],args['evidence'])
+        if op=='assignment_feedback_ack':return c.acknowledge_feedback(role,args['assignment'],args['epoch'])
+        if op=='mission_result':
+            from mission_recovery import mission_result
+            return mission_result(c,role,args['mission'])
+        if op=='delivery_outbox':return c.delivery_outbox(role,args.get('assignment'))
+        if op=='delivery_attempt':return c.delivery_attempt(role,args['delivery_id'])
+        if op=='supervisor_tick':return c.supervisor_tick(role)
+        if op=='human_request':return c.human_request(role,args['mission'],args['kind'],args['body'],args.get('assignment'),args.get('deadline'))
         raise ValueError('unknown control op')
+
+    def governance_call(authorization,op,args):
+        from governance import GovernanceStore
+        g=GovernanceStore(store.dbfile,hashes)
+        principal=g.authenticate(authorization)
+        if op=='governance_identity':return {'subject':principal.subject,'role':principal.role,'source':principal.source,'isolation_level':'LOGICAL_ONLY','protected_owner':'NOT_CONFIGURED'}
+        if op=='governance_authorize':return g.authorize(principal,args['action'],args.get('scope'))
+        if op=='knowledge_publish':return g.publish_knowledge(principal,args['key'],args['content'],args['provenance'])
+        if op=='knowledge_history':return g.knowledge_history(principal,args['key'])
+        if op=='request_bound_approval':return g.request_approval(principal,args['mission'],args['action'],args['scope'],args['candidate_sha'],args['expires_at'],args.get('assignment'))
+        if op=='bound_approval_history':return g.approval_history(principal,args['request_id'])
+        if op=='decide_bound_approval':return g.approve(principal,args['request_id'])
+        raise ValueError('unknown governance operation')
 
     sessions = {}
     session_lock = Lock()
@@ -77,7 +118,7 @@ def handler_factory(store: Registry, hashes: dict):
             c=self.headers.get('Cookie','')
             sid=None
             for part in c.split(';'):
-                if part.strip().startswith('kt_session='):
+                if part.strip().startswith(f'kt_session_{self.server.server_port}='):
                     sid=part.strip().partition('=')[2]
             if not sid: return None
             with session_lock:
@@ -103,11 +144,12 @@ def handler_factory(store: Registry, hashes: dict):
             path=urlsplit(self.path).path
             if path=='/health':
                 return self.respond(200,{'status':'UP','dashboard':'/ui',
-                                         'note':'HTTP registry; MCP is stdio client_mcp.py'})
+                                         'note':'HTTP registry; MCP is stdio client_mcp.py','supervisor_last_success':getattr(self.server,'supervisor_last_success',None),'supervisor_error':getattr(self.server,'supervisor_error',None)})
             if path in ('/','/ui','/ui/'):
                 return self.asset('index.html','text/html; charset=utf-8')
             if path=='/ui/dashboard.css':return self.asset('dashboard.css','text/css; charset=utf-8')
             if path=='/ui/dashboard.js':return self.asset('dashboard.js','application/javascript; charset=utf-8')
+            if path=='/ui/cockpit.js':return self.asset('cockpit.js','application/javascript; charset=utf-8')
             if path=='/ui/api/report':
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
@@ -124,6 +166,21 @@ def handler_factory(store: Registry, hashes: dict):
                 except Denied as exc:return self.respond(exc.http_status,{'error':str(exc)})
                 except ImportError:return self.respond(503,{'error':'CONTROL_STORE_UNAVAILABLE'})
                 except Exception:return self.respond(500,{'error':'CONTROL_STORE_READ_FAILED'})
+            if path in ('/ui/api/cockpit','/ui/api/assignment-diff'):
+                if not self._session():return self.respond(401,{'error':'LOGIN_REQUIRED'})
+                try:
+                    from cockpit import snapshot,assignment_diff
+                    from urllib.parse import parse_qs
+                    control=controller()
+                    if path=='/ui/api/cockpit':result=snapshot(control,'CODEX')
+                    else:
+                        q=parse_qs(urlsplit(self.path).query)
+                        if set(q)-{'assignment','candidate_sha','path'}:raise ValueError('UNKNOWN_DIFF_QUERY')
+                        result=assignment_diff(control,'CODEX',q.get('assignment',[''])[0],q.get('candidate_sha',[None])[0],q.get('path',[None])[0])
+                    return self.respond(200,{'ok':True,'result':result})
+                except Denied as exc:return self.respond(exc.http_status,{'error':str(exc)})
+                except ValueError:return self.respond(400,{'error':'INVALID_COCKPIT_REQUEST'})
+                except Exception:return self.respond(503,{'error':'COCKPIT_UNAVAILABLE'})
             if path=='/ui/api/task-evidence':
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
@@ -142,8 +199,21 @@ def handler_factory(store: Registry, hashes: dict):
             if path=='/ui/api/snapshot':
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
-                result=store.dashboard_snapshot('CODEX')
-                return self.respond(200,{'ok':True,'result':result,'csrf':sess['csrf']})
+                try:
+                    result=store.dashboard_snapshot('CODEX')
+                    control=controller()
+                    with control.connection() as db:
+                        mode=control.mode(db)
+                        result['controller_summary']={'locks':db.execute('SELECT count(*) FROM cc_locks').fetchone()[0],'assignments':db.execute('SELECT count(*) FROM cc_assignments').fetchone()[0],
+                            'frozen_locks':db.execute("SELECT count(*) FROM cc_locks WHERE state='FROZEN'").fetchone()[0],
+                            'mode':mode,'source':'CONTROLLER_SQLITE','legacy_tasks_separate':True}
+                        seen=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+                        result['controller_summary']['worksharing_locks']=[{**dict(r),'source':'CONTROLLER_SQLITE','last_verified_at':seen,'resume':'VERIFIED_PROCESS_PROOF_REQUIRED'} for r in db.execute('SELECT scope,assignment,owner,epoch,state FROM cc_locks ORDER BY assignment,scope LIMIT 500')]
+                    if mode in ('EMERGENCY_STOP','RECOVERY_REQUIRED'):
+                        result['control']['mode']=mode
+                        result['control']['frozen_locks']+=result['controller_summary']['frozen_locks']
+                    return self.respond(200,{'ok':True,'result':result,'csrf':sess['csrf']})
+                except Exception:return self.respond(503,{'error':'REGISTRY_SUMMARY_UNAVAILABLE'})
             return self.respond(404,{'error':'NOT_FOUND'})
 
         def do_POST(self):
@@ -154,8 +224,9 @@ def handler_factory(store: Registry, hashes: dict):
                 try:
                     body=self._json_body(20000)
                     op=body.get('op'); args=body.get('args',{})
-                    if op not in OPS+CONTROL_OPS or not isinstance(args,dict):raise ValueError('unknown op')
-                    if op in CONTROL_OPS: result=control_call(role,op,args)
+                    if op not in OPS+CONTROL_OPS+GOV_OPS or not isinstance(args,dict):raise ValueError('unknown op')
+                    if op in GOV_OPS: result=governance_call(self.headers.get('Authorization',''),op,args)
+                    elif op in CONTROL_OPS: result=control_call(role,op,args)
                     elif op=='status': result=store.status(role)
                     elif op=='heartbeat': result=store.heartbeat(role,args.get('event','AVAILABLE'))
                     elif op=='create_task': result=store.create_task(role,args['tid'],args['title'],args['scope'],args['contract'],args['base_sha'],args.get('wave_id','PILOT'),args.get('requires_preview',True),args.get('exclusive_resources',[]),args.get('depends_on',[]))
@@ -200,7 +271,7 @@ def handler_factory(store: Registry, hashes: dict):
                     with session_lock:
                         sessions[sid]={'expires':time.time()+SESSION_TTL,'csrf':csrf}
                     return self.respond(200,{'ok':True,'message':'SIGNED_IN'},
-                                        [('Set-Cookie',f'kt_session={sid}; HttpOnly; SameSite=Strict; Path=/ui; Max-Age={SESSION_TTL}')])
+                                        [('Set-Cookie',f'kt_session_{self.server.server_port}={sid}; HttpOnly; SameSite=Strict; Path=/ui; Max-Age={SESSION_TTL}')])
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
                 if self.headers.get('X-KTOOL-CSRF','')!=sess['csrf']:
@@ -231,10 +302,10 @@ def handler_factory(store: Registry, hashes: dict):
                 elif path=='/ui/api/logout':
                     c=self.headers.get('Cookie','')
                     for part in c.split(';'):
-                        if part.strip().startswith('kt_session='):
+                        if part.strip().startswith(f'kt_session_{self.server.server_port}='):
                             sid=part.strip().partition('=')[2]
                             with session_lock:sessions.pop(sid,None)
-                    return self.respond(200,{'ok':True},[('Set-Cookie','kt_session=; HttpOnly; SameSite=Strict; Path=/ui; Max-Age=0')])
+                    return self.respond(200,{'ok':True},[('Set-Cookie',f'kt_session_{self.server.server_port}=; HttpOnly; SameSite=Strict; Path=/ui; Max-Age=0')])
                 else:return self.respond(404,{'error':'NOT_FOUND'})
                 return self.respond(200,{'ok':True,'result':result})
             except Denied as e:return self.respond(e.http_status,{'ok':False,'error':str(e)})
@@ -256,7 +327,9 @@ def main():
     p.add_argument('--port',type=int,default=8876)
     args=p.parse_args()
     roles=json.loads(Path(args.roles).read_text(encoding='utf-8'))
-    if set(roles)!= {'CODEX','ANTI-01','ANTI-02'}:raise ValueError('Expected CODEX / ANTI-01 / ANTI-02 roles')
+    if not {'CODEX','ANTI-01','ANTI-02'}<=set(roles) or any(k not in {'CODEX','ANTI-01','ANTI-02','OWNER','CODEX_LEAD','TRUSTED_QA_RUNNER','READ_ONLY_OBSERVER'} and not k.startswith('SUBAGENT:') for k in roles):raise ValueError('Unknown or missing configured principal')
+    import re
+    if any(not isinstance(v,str) or not re.fullmatch('[0-9a-f]{64}',v) for v in roles.values()) or len(set(roles.values()))!=len(roles):raise ValueError('Unique credential hashes required')
     if not 1<=args.port<=65535:raise ValueError('invalid port')
     # Back up the pre-migration DB BEFORE Registry.init changes schema. Fail closed if backup fails.
     db_path=Path(args.db)
@@ -272,7 +345,7 @@ def main():
         control.set_mode('CODEX','EMERGENCY_STOP' if store.control_status('CODEX')['mode']=='EMERGENCY_STOP' else 'RECOVERY_REQUIRED')
     print('Orchestration recovery:',control_startup,flush=True)
     print('Recovery reconciliation:',startup,flush=True)
-    httpd=ThreadingHTTPServer(('127.0.0.1',args.port),handler_factory(store,roles))
+    httpd=SupervisedHTTPServer(('127.0.0.1',args.port),handler_factory(store,roles),control)
     print(f'K-TOOL Task Registry & Dashboard: http://127.0.0.1:{args.port}/ui',flush=True)
     print('MCP adapter is a separate stdio process. CTRL+C stops this server.',flush=True)
     try:httpd.serve_forever(poll_interval=0.25)

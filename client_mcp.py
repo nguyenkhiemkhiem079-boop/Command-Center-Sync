@@ -249,9 +249,56 @@ def steer(mission:str,assignment:str,target:str,context_version:str,instruction:
     return _call('steer',mission=mission,assignment=assignment,target=target,context_version=context_version,instruction=instruction)
 
 @mcp.tool()
-def human_request(mission:str,kind:str,body:str,assignment:str|None=None)->dict:
+def human_request(mission:str,kind:str,body:str,assignment:str|None=None,deadline:str|None=None)->dict:
     """Record input/direction/review/approval request; never grants approval."""
-    return _call('human_request',mission=mission,kind=kind,body=body,assignment=assignment)
+    return _call('human_request',mission=mission,kind=kind,body=body,assignment=assignment,deadline=deadline)
+
+
+@mcp.tool()
+def delivery_outbox(assignment:str|None=None)->dict:
+    """Read own durable delivery envelopes; never starts an agent."""
+    return _call('delivery_outbox',assignment=assignment)
+
+@mcp.tool()
+def delivery_attempt(delivery_id:str)->dict:
+    """CODEX records bounded retransmission of one unACKed envelope, not execution."""
+    return _call('delivery_attempt',delivery_id=delivery_id)
+
+@mcp.tool()
+def supervisor_tick()->dict:
+    """CODEX deterministic timeout/frozen summary; never grants approval."""
+    return _call('supervisor_tick')
+
+@mcp.tool()
+def mission_result(mission:str)->dict:
+    """CODEX aggregates required outputs, checkpoints and unresolved approval state."""
+    return _call('mission_result',mission=mission)
+
+@mcp.tool()
+def governance_identity()->dict:
+    """Inspect authenticated backend role, never payload-declared role."""
+    return _call('governance_identity')
+
+@mcp.tool()
+def knowledge_history(key:str)->dict:
+    """Read content-hashed knowledge history; assertions do not approve a baseline."""
+    return _call('knowledge_history',key=key)
+
+@mcp.tool()
+def request_bound_approval(mission:str,action:str,scope:list[str],candidate_sha:str,expires_at:str,assignment:str|None=None)->dict:
+    """Request immutable, expiring decision. This does not grant permission."""
+    return _call('request_bound_approval',mission=mission,action=action,scope=scope,candidate_sha=candidate_sha,expires_at=expires_at,assignment=assignment)
+
+
+@mcp.tool()
+def assignment_feedback(assignment:str,issues:list[dict],evidence:str)->dict:
+    """CODEX requests bounded corrections for controller assignment; does not accept code."""
+    return _call('assignment_feedback',assignment=assignment,issues=issues,evidence=evidence)
+
+@mcp.tool()
+def assignment_feedback_ack(assignment:str,epoch:int)->dict:
+    """Same owner acknowledges feedback and starts the next QA iteration."""
+    return _call('assignment_feedback_ack',assignment=assignment,epoch=epoch)
 
 if __name__=='__main__':
     main()

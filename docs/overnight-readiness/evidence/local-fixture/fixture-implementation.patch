@@ -1,0 +1,45 @@
+diff --git a/architectural/envelope/area.py b/architectural/envelope/area.py
+new file mode 100644
+index 0000000..edbb938
+--- /dev/null
++++ b/architectural/envelope/area.py
+@@ -0,0 +1,4 @@
++def area(width, height):
++    if width < 0 or height < 0:
++        raise ValueError("negative dimension")
++    return width * height
+diff --git a/architectural/envelope/test_area.py b/architectural/envelope/test_area.py
+new file mode 100644
+index 0000000..f08ef01
+--- /dev/null
++++ b/architectural/envelope/test_area.py
+@@ -0,0 +1,8 @@
++import unittest
++from area import area
++class AreaTest(unittest.TestCase):
++    def test_positive(self): self.assertEqual(area(2,3),6)
++    def test_negative(self):
++        with self.assertRaises(ValueError): area(-1,2)
++    def test_negative_height(self):
++        with self.assertRaises(ValueError): area(2,-1)
+diff --git a/documentation/schedules/schedule.py b/documentation/schedules/schedule.py
+new file mode 100644
+index 0000000..1d3877d
+--- /dev/null
++++ b/documentation/schedules/schedule.py
+@@ -0,0 +1,5 @@
++def totals(rows):
++    result = {}
++    for key, value in rows:
++        result[key] = result.get(key, 0) + value
++    return dict(sorted(result.items()))
+diff --git a/documentation/schedules/test_schedule.py b/documentation/schedules/test_schedule.py
+new file mode 100644
+index 0000000..b5053cb
+--- /dev/null
++++ b/documentation/schedules/test_schedule.py
+@@ -0,0 +1,4 @@
++import unittest
++from schedule import totals
++class ScheduleTest(unittest.TestCase):
++    def test_totals(self): self.assertEqual(totals([("b",2),("a",1),("b",3)]),{"a":1,"b":5})

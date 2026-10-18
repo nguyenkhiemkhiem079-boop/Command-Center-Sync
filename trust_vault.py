@@ -10,7 +10,8 @@ import subprocess
 HEX40=re.compile(r'^[0-9a-f]{40}$')
 HEX64=re.compile(r'^[0-9a-f]{64}$')
 REQUIRED={'mission','task','iteration','identity','epoch','repo','base_sha','candidate_sha','tree_sha',
-          'paths','profile_digest','suite_digest','commands','artifacts','timestamp','provenance','trust_policy_digest'}
+          'paths','profile_digest','suite_digest','commands','artifacts','timestamp','provenance','trust_policy_digest',
+          'contract_hash','workflow_revision','verifier_identity','approval_status'}
 
 def digest(value):
     return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':')).encode()).hexdigest()
@@ -82,11 +83,11 @@ def verify_evidence(evidence,policy,ci_fetch=None,now=None):
             require(type(evidence[key]) is int and evidence[key]>0,'INVALID_'+key)
         for key in ('base_sha','candidate_sha','tree_sha'):
             require(bool(HEX40.fullmatch(evidence[key])),'INVALID_'+key)
-        for key in ('profile_digest','suite_digest'):
+        for key in ('profile_digest','suite_digest','contract_hash','workflow_revision'):
             require(bool(HEX64.fullmatch(evidence[key])),'INVALID_'+key)
         # Controller policy pins every task binding; missing expected binding fails closed.
         expected=policy.get('expected',{})
-        bindings=('mission','task','iteration','identity','epoch','repo','base_sha','candidate_sha','tree_sha','paths','profile_digest','suite_digest')
+        bindings=('mission','task','iteration','identity','epoch','repo','base_sha','candidate_sha','tree_sha','paths','profile_digest','suite_digest','contract_hash','workflow_revision','verifier_identity','approval_status')
         for key in bindings:
             require(key in expected and evidence[key]==expected[key],'BINDING_MISMATCH_'+key)
         require(isinstance(evidence['paths'],list) and bool(evidence['paths']) and
@@ -114,6 +115,8 @@ def verify_evidence(evidence,policy,ci_fetch=None,now=None):
         if errors: return {'status':'REJECTED','errors':errors,'evidence_digest':digest(evidence)}
         source=verify_git_source(evidence,policy)
         if evidence['provenance']=='LOCAL_SAME_USER':
+            if evidence['approval_status']!='NOT_APPROVED':
+                return {'status':'REJECTED','errors':['LOCAL_EVIDENCE_CANNOT_APPROVE'],'production_trusted':False}
             return {'status':'LOCAL_VERIFIED','errors':[],'production_trusted':False,
                     'source_verification':source,
                     'command_evidence':'CONSISTENCY_ONLY_NOT_EXECUTION_PROOF',

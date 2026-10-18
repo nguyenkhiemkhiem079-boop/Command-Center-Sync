@@ -1,0 +1,103 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "create DRILL-A",
+      "status": "PASS"
+    },
+    {
+      "name": "assign DRILL-A",
+      "status": "PASS"
+    },
+    {
+      "name": "create DRILL-B",
+      "status": "PASS"
+    },
+    {
+      "name": "assign DRILL-B",
+      "status": "PASS"
+    },
+    {
+      "name": "checkpoint persisted",
+      "status": "PASS"
+    },
+    {
+      "name": "worker cannot create",
+      "status": "PASS"
+    },
+    {
+      "name": "worker cannot impersonate",
+      "status": "PASS"
+    },
+    {
+      "name": "simulated quota retains lock",
+      "status": "PASS"
+    },
+    {
+      "name": "other worker unaffected",
+      "status": "PASS"
+    },
+    {
+      "name": "actual coordinator process terminated",
+      "status": "PASS"
+    },
+    {
+      "name": "restart fails closed",
+      "status": "PASS"
+    },
+    {
+      "name": "checkpoint survives crash",
+      "status": "PASS"
+    },
+    {
+      "name": "restart freezes active worker",
+      "status": "PASS"
+    },
+    {
+      "name": "backup integrity and hash",
+      "status": "PASS"
+    },
+    {
+      "name": "backup retains both tasks",
+      "status": "PASS"
+    },
+    {
+      "name": "unconfirmed recovery denied",
+      "status": "PASS"
+    },
+    {
+      "name": "legacy boolean recovery remains blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "cross-account handover denied",
+      "status": "PASS"
+    },
+    {
+      "name": "legacy task resume requires verified stop",
+      "status": "PASS"
+    },
+    {
+      "name": "old fencing denied while frozen",
+      "status": "PASS"
+    },
+    {
+      "name": "emergency stop enforced",
+      "status": "PASS"
+    },
+    {
+      "name": "new work denied on emergency",
+      "status": "PASS"
+    },
+    {
+      "name": "writes denied on emergency",
+      "status": "PASS"
+    }
+  ],
+  "scope": "disposable process + HTTP + SQLite drill",
+  "legacy_safe_resume": "BLOCKED_VERIFIED_PROCESS_PROOF_REQUIRED",
+  "new_controller_safe_resume": "covered by test_orchestration/test_recovery_manager",
+  "real_antigravity": "NOT_EXECUTED",
+  "quota": "SIMULATED_REGISTRY_EVENT",
+  "power_loss": "NOT_EXECUTED"
+}
