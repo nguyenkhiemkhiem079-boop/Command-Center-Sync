@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 from registry import Registry, identify, Denied
 
 OPS = ('status','heartbeat','create_task','assign_task','get_task','checkpoint','submit_self_qa','submit_result','acknowledge_feedback','feedback_history','freeze','review_task','read_review','close_task','report','audit','control_status','emergency_stop','resume_control','resume_frozen_task','stale_sweep','qa_evidence')
-CONTROL_OPS = ('control_snapshot','get_assignment','acknowledge_assignment','assignment_checkpoint','assignment_submit_claim','steering_ack','propose_contract','read_approved_contract','publish_revision','create_mission','queue_wave','dispatch','steer','human_request','delivery_outbox','delivery_attempt','supervisor_tick','mission_result')
+CONTROL_OPS = ('control_snapshot','get_assignment','acknowledge_assignment','assignment_checkpoint','assignment_submit_claim','steering_ack','propose_contract','read_approved_contract','publish_revision','create_mission','queue_wave','dispatch','steer','human_request','delivery_outbox','delivery_attempt','supervisor_tick','mission_result','assignment_feedback','assignment_feedback_ack')
 GOV_OPS = ('governance_identity','governance_authorize','knowledge_publish','knowledge_history','request_bound_approval','bound_approval_history','decide_bound_approval')
 WEB = Path(__file__).resolve().with_name('web')
 SESSION_TTL = 8*3600
@@ -39,6 +39,8 @@ def handler_factory(store: Registry, hashes: dict):
         if op=='queue_wave':return c.queue_wave(role,args['mission'],args['wave'],args['assignments'],args.get('parent'))
         if op=='dispatch':return c.dispatch(role,args.get('capabilities'),args.get('availability'),args.get('ack_timeout_seconds',60))
         if op=='steer':return c.steer(role,args['mission'],args['assignment'],args['target'],args['context_version'],args['instruction'])
+        if op=='assignment_feedback':return c.feedback(role,args['assignment'],args['issues'],args['evidence'])
+        if op=='assignment_feedback_ack':return c.acknowledge_feedback(role,args['assignment'],args['epoch'])
         if op=='mission_result':
             from mission_recovery import mission_result
             return mission_result(c,role,args['mission'])
@@ -178,17 +180,19 @@ def handler_factory(store: Registry, hashes: dict):
             if path=='/ui/api/snapshot':
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
-                result=store.dashboard_snapshot('CODEX')
-                control=controller()
-                with control.connection() as db:
-                    mode=control.mode(db)
-                    result['controller_summary']={'locks':db.execute('SELECT count(*) FROM cc_locks').fetchone()[0],'assignments':db.execute('SELECT count(*) FROM cc_assignments').fetchone()[0],
-                        'frozen_locks':db.execute("SELECT count(*) FROM cc_locks WHERE state='FROZEN'").fetchone()[0],
-                        'mode':mode,'source':'CONTROLLER_SQLITE','legacy_tasks_separate':True}
-                if mode in ('EMERGENCY_STOP','RECOVERY_REQUIRED'):
-                    result['control']['mode']=mode
-                    result['control']['frozen_locks']+=result['controller_summary']['frozen_locks']
-                return self.respond(200,{'ok':True,'result':result,'csrf':sess['csrf']})
+                try:
+                    result=store.dashboard_snapshot('CODEX')
+                    control=controller()
+                    with control.connection() as db:
+                        mode=control.mode(db)
+                        result['controller_summary']={'locks':db.execute('SELECT count(*) FROM cc_locks').fetchone()[0],'assignments':db.execute('SELECT count(*) FROM cc_assignments').fetchone()[0],
+                            'frozen_locks':db.execute("SELECT count(*) FROM cc_locks WHERE state='FROZEN'").fetchone()[0],
+                            'mode':mode,'source':'CONTROLLER_SQLITE','legacy_tasks_separate':True}
+                    if mode in ('EMERGENCY_STOP','RECOVERY_REQUIRED'):
+                        result['control']['mode']=mode
+                        result['control']['frozen_locks']+=result['controller_summary']['frozen_locks']
+                    return self.respond(200,{'ok':True,'result':result,'csrf':sess['csrf']})
+                except Exception:return self.respond(503,{'error':'REGISTRY_SUMMARY_UNAVAILABLE'})
             return self.respond(404,{'error':'NOT_FOUND'})
 
         def do_POST(self):

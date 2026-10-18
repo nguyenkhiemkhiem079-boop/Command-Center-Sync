@@ -17,7 +17,8 @@ class TestRunStudio(unittest.TestCase):
         with patch.dict(sys.modules,{'orchestration':module}):
             self.assertEqual(self.call('/ui/api/run-studio')[0],401)
             module.ControlStore.assert_not_called()
-            self.login()
+        self.login()
+        with patch.dict(sys.modules,{'orchestration':module}):
             code,data=self.call('/ui/api/run-studio')
         self.assertEqual(code,200);self.assertEqual(data['result'],fixture)
         module.ControlStore.assert_called_once_with(self.db.dbfile)

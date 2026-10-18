@@ -19,4 +19,13 @@ class CockpitHttpTests(unittest.TestCase):
         self.assertEqual(self.rpc('ANTI-01','governance_authorize',{'action':'release','role':'OWNER'})[0],403)
         self.assertEqual(self.rpc('ANTI-01','knowledge_publish',{'key':'ADR','content':{'baseline':'weaken'},'provenance':{'source_ref':'test','source_sha256':'a'*64,'kind':'OPERATOR_ASSERTION'}})[0],403)
         self.assertEqual(self.rpc('CODEX','decide_bound_approval',{'request_id':'anything','role':'OWNER','approved':True})[0],403)
+    def test_summary_failure_is_bounded_api_error(self):
+        import sys,types
+        from unittest.mock import Mock,patch
+        self.login()
+        module=types.ModuleType('orchestration');module.ControlStore=Mock(side_effect=RuntimeError('private filesystem detail'))
+        with patch.dict(sys.modules,{'orchestration':module}):
+            code,data=self.call('/ui/api/snapshot')
+        self.assertEqual(code,503);self.assertEqual(data['error'],'REGISTRY_SUMMARY_UNAVAILABLE')
+        self.assertNotIn('filesystem',str(data))
 if __name__=='__main__':unittest.main()

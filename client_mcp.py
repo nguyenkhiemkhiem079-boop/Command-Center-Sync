@@ -289,5 +289,16 @@ def request_bound_approval(mission:str,action:str,scope:list[str],candidate_sha:
     """Request immutable, expiring decision. This does not grant permission."""
     return _call('request_bound_approval',mission=mission,action=action,scope=scope,candidate_sha=candidate_sha,expires_at=expires_at,assignment=assignment)
 
+
+@mcp.tool()
+def assignment_feedback(assignment:str,issues:list[dict],evidence:str)->dict:
+    """CODEX requests bounded corrections for controller assignment; does not accept code."""
+    return _call('assignment_feedback',assignment=assignment,issues=issues,evidence=evidence)
+
+@mcp.tool()
+def assignment_feedback_ack(assignment:str,epoch:int)->dict:
+    """Same owner acknowledges feedback and starts the next QA iteration."""
+    return _call('assignment_feedback_ack',assignment=assignment,epoch=epoch)
+
 if __name__=='__main__':
     main()

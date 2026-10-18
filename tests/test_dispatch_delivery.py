@@ -8,6 +8,7 @@ class DeliveryTests(unittest.TestCase):
     git=fixtures.OrchestrationTests.git
     spec=fixtures.OrchestrationTests.spec
     start=fixtures.OrchestrationTests.start
+    candidate=fixtures.OrchestrationTests.candidate
     def test_atomic_assignment_outbox_rollback(self):
         self.store.queue_wave('CODEX','M','W',[self.spec('A')])
         with patch.object(self.store,'_enqueue_delivery',side_effect=RuntimeError('fixture interruption')):
@@ -48,4 +49,14 @@ class DeliveryTests(unittest.TestCase):
         with self.assertRaises(Denied):self.store.supervisor_tick('ANTI-01')
         result=self.store.supervisor_tick('CODEX');self.assertFalse(result['approval_granted'])
         self.assertTrue(ControlStore(self.dbpath).snapshot()['supervisor_summaries'])
+    def test_normalized_root_cause_freezes_with_changing_defect_ids(self):
+        epoch=self.start([self.spec('A')])['A'];self.store.acknowledge('ANTI-01','A',epoch,self.contract)
+        sha,paths=self.candidate('A')
+        for i in range(3):
+            self.store.checkpoint('ANTI-01','A',epoch,sha,paths,{})
+            self.store.submit_claim('ANTI-01','A',epoch)
+            issue={'id':'D'+str(i),'severity':'high','path':paths[0],'expected':'correct','actual':'wrong'+str(i),'root_cause':'  Missing  Boundary CHECK  ' if i==0 else 'missing boundary check'}
+            self.store.feedback('CODEX','A',[issue],'real fixture failing oracle reference')
+            if i<2:self.store.acknowledge_feedback('ANTI-01','A',epoch)
+        self.assertEqual(self.store.get_assignment('CODEX','A')['status'],'FROZEN')
 if __name__=='__main__':unittest.main()
