@@ -29,9 +29,13 @@ def utcnow():
 def clean_scope(scope: str) -> str:
     if not isinstance(scope, str) or len(scope) > 240:
         raise ValueError('invalid scope')
-    scope = scope.strip().replace('\\', '/').strip('/')
+    scope = scope.replace('\\', '/')
     parts = scope.split('/')
-    if not scope or ':' in scope or any(p in ('', '.', '..') for p in parts):
+    if (not scope or any(c in scope for c in ':*?"<>|') or
+            any(ord(c) < 32 for c in scope) or
+            any(p in ('', '.', '..') or p.endswith((' ', '.')) or
+                re.fullmatch(r'(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?', p)
+                for p in parts)):
         raise ValueError('invalid scope')
     return scope.casefold()
 
@@ -566,7 +570,7 @@ class Registry:
 
     def close_task(self, actor, tid, integration_sha, source_stopped):
         self._require(actor,('CODEX',))
-        if not source_stopped: raise Denied('SOURCE_NOT_CONFIRMED_STOPPED')
+        if source_stopped is not True: raise Denied('SOURCE_NOT_CONFIRMED_STOPPED')
         if not isinstance(integration_sha,str) or not SHA40.fullmatch(integration_sha):
             raise ValueError('integration_sha must be a 40-hex Git commit')
         with self.transaction() as db:

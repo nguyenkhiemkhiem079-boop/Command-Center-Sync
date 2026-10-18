@@ -1,5 +1,6 @@
 private/
 __pycache__/
 *.pyc
+.venv/
 config/qa_profile.local.json
 *.log

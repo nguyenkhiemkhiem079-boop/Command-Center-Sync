@@ -218,9 +218,11 @@ class TestDualDev(unittest.TestCase):
         self.assertEqual(code,200)
     def test_v03_schema_upgrade(self):
         old=Path(self.tmp.name)/'legacy.db'
-        with sqlite3.connect(old) as db:
-            db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY,title TEXT,scope TEXT,contract TEXT,state TEXT,owner TEXT,base_sha TEXT,fencing INTEGER,checkpoint TEXT,checkpoint_at TEXT,qa_result TEXT,qa_actor TEXT,updated TEXT)')
-            db.execute("INSERT INTO tasks VALUES('LEGACY','Old','old','Contract','QUEUED',NULL,?,0,NULL,NULL,NULL,NULL,'2026-10-17')",(self.sha,))
+        from contextlib import closing
+        with closing(sqlite3.connect(old)) as db:
+            with db:
+                db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY,title TEXT,scope TEXT,contract TEXT,state TEXT,owner TEXT,base_sha TEXT,fencing INTEGER,checkpoint TEXT,checkpoint_at TEXT,qa_result TEXT,qa_actor TEXT,updated TEXT)')
+                db.execute("INSERT INTO tasks VALUES('LEGACY','Old','old','Contract','QUEUED',NULL,?,0,NULL,NULL,NULL,NULL,'2026-10-17')",(self.sha,))
         upgraded=Registry(old)
         self.assertEqual(upgraded.get_task('CODEX','LEGACY')['wave_id'],'PILOT')
         self.assertEqual(upgraded.get_task('CODEX','LEGACY')['title'],'Old')
