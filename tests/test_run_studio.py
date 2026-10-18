@@ -58,6 +58,8 @@ class TestRunStudio(unittest.TestCase):
         control=ControlStore(self.db.dbfile)
         with control.transaction() as db:
             db.execute("INSERT INTO cc_assignments(id,mission,wave,team,owner,contract_hash,revision,repo,base_sha,allowed,readonly,forbidden,resources,dependencies,acceptance,capabilities,priority,status,epoch,updated) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",('A1','M1','W1','T1','ANTI-01','test-contract','test-revision',self.tmp.name,self.sha,'[\"module\"]','[]','[]','[]','[]','[\"test\"]','[]',0,'TASK_ASSIGNED',1,'TEST_ONLY'))
+            task=control.row(db,'cc_assignments','A1')
+            control._enqueue_delivery(db,task)
         return control
 
     def test_control_roles_ack_and_frozen_guard(self):
