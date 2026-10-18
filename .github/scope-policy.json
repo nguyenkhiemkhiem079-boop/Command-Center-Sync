@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "repository": "nguyenkhiemkhiem079-boop/Command-Center-Sync",
-  "approval_state": "PENDING_OWNER_APPROVAL",
+  "approval_state": "OWNER_APPROVED",
   "protected_paths": [
     ".github",
     "tests",
