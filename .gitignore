@@ -2,5 +2,7 @@ private/
 __pycache__/
 *.pyc
 .venv/
+.client-venv/
+.agents/mcp_config.json
 config/qa_profile.local.json
 *.log
