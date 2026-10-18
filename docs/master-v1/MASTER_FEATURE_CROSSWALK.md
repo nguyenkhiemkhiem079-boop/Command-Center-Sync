@@ -1,7 +1,7 @@
 # MASTER FEATURE CROSSWALK — Full Fix delta
 
-Source candidate `552197b91b09c955d0fb48f96e329eba20b98f64`; deployed source remains `c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d`.
-196 regression tests executed on Windows, 173.942s, OK; local shared principal, not production-trusted QA.
+Source base `eb87bbed0f435585c035807fda320b9a4087095e`; current candidate is this base plus the uncommitted trusted-hosted-QA source in the working tree. Deployed source remains `c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d`.
+210 regression tests executed on Windows, 190.193s, OK; local shared principal, not production-trusted QA. The new hosted verifier is source-only and has not run in GitHub Actions.
 Counts: {"PARTIAL": 42, "BLOCKED": 5, "IMPLEMENTED_AND_VERIFIED": 9}. IMPLEMENTED_AND_VERIFIED applies only to the explicitly stated local contract. All rows remain undeployed in the new candidate. No NOT_EXECUTED is aggregated into PASS.
 Native two independent Antigravity Teamwork sessions: BLOCKED pending permitted supervised runtime evidence; technical impossibility is not established.
 
@@ -26,14 +26,14 @@ Native two independent Antigravity Teamwork sessions: BLOCKED pending permitted 
 | W2.05 | IMPLEMENTED_AND_VERIFIED | test_orchestration + browser Fleet DAG: local cycle/dependency/resources/graph verified; no native runtime claim |
 | W2.06 | IMPLEMENTED_AND_VERIFIED | tests/test_scope_gate.py; Parent-child/resource/fencing/frozen/relinquish local sandbox verified |
 | W2.07 | PARTIAL | worktree_manager.py + 3 actual Git tests: exact registered root, branch/base/owner uniqueness/revalidation; actual worker resume pending |
-| W2.08 | PARTIAL | actual hosted CI-PILOT: allowed ci-pilot PASS; protected tests path FAILURE exit2 as expected; protection save pending GitHub sudo confirmation |
+| W2.08 | PARTIAL | Actual active ruleset 25346465 enforces `Trusted base scope policy`; PR #1 CI-PILOT passed and PR #2 OUT_OF_SCOPE/PROTECTED_PATH was rejected, confirmed by owner. Direct push/non-fast-forward blocked. Broader task scopes and full trusted QA enforcement are not configured. |
 | W2.09 | PARTIAL | orchestration.py; Atomic queue/checkpoints có; approved parent continuation chưa đủ |
 | W2.10 | IMPLEMENTED_AND_VERIFIED | tests/test_orchestration.py; Early child/provider completion không làm wave accepted |
 | W2.11 | IMPLEMENTED_AND_VERIFIED | tests/test_orchestration.py; Target/context/ACK/owner restrictions; advisory only |
 | W2.12 | PARTIAL | orchestration.py add_subagent; Scope/tools narrowed; real native subagent enforcement chưa verified |
 | W2.13 | PARTIAL | tests/test_transaction_sync.py; 14 local Git tests; production integration backend blocked |
 | W2.14 | BLOCKED | transaction_sync.py; Disposable CAS verified, no production writer/approval/CI |
-| W2.15 | PARTIAL | approved non-production branch 4380084; PR1/PR2 actual runs; required protection form blocked Confirm access, no merge |
+| W2.15 | PARTIAL | Active ruleset 25346465 protects `integration/command-center-qa`: PR required, one independent approval, stale approval dismissed, last-push approval, strict `Trusted base scope policy`, no bypass, deletion/non-fast-forward blocked. `Trusted Independent QA` is not yet required; scope policy remains CI-PILOT-only. |
 | W3.01 | PARTIAL | trust_vault + harness; Claim separation có; real trusted independent CI thiếu |
 | W3.02 | PARTIAL | orchestration.py + harness; Defect iteration and same-owner correction local; native Anti chưa chạy |
 | W3.03 | IMPLEMENTED_AND_VERIFIED | test_dispatch_delivery: normalized repeated root cause across defect IDs freezes after three non-improving rounds; local policy scope |
