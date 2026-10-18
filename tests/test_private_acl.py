@@ -11,4 +11,15 @@ class PrivateAclTests(unittest.TestCase):
             result=subprocess.run(['pwsh','-NoProfile','-File',str(helper),'-LiteralPath',str(target)],capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stderr);self.assertIn('PRIVATE_DACL_VERIFIED',result.stdout)
             self.assertEqual(target.read_text(),'TEST_ONLY_NOT_A_CREDENTIAL')
+    def test_junction_ancestor_refused(self):
+        with tempfile.TemporaryDirectory() as folder,tempfile.TemporaryDirectory() as outside:
+            target=Path(outside)/'fixture.txt';target.write_text('TEST_ONLY')
+            link=Path(folder)/'junction'
+            subprocess.run(['cmd','/c','mklink','/J',str(link),outside],capture_output=True,check=True)
+            try:
+                helper=Path(__file__).resolve().parents[1]/'scripts/protect-private-path.ps1'
+                result=subprocess.run(['pwsh','-NoProfile','-File',str(helper),'-LiteralPath',str(link/'fixture.txt')],capture_output=True,text=True)
+                self.assertNotEqual(result.returncode,0);self.assertIn('reparse ancestor',result.stderr)
+                self.assertEqual(target.read_text(),'TEST_ONLY')
+            finally:os.rmdir(link)
 if __name__=='__main__':unittest.main()

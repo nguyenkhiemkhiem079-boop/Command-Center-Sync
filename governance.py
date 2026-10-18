@@ -169,6 +169,12 @@ class GovernanceStore:
         if principal.role not in roles:
             raise Denied('ROLE_DENIED',403)
         scopes=_scopes(scope) if scope is not None else None
+        if action=='source.write' and scopes:
+            critical=('.github','private','config','trust_vault.py','governance.py','registry.py','server.py')
+            if any(path==base or path.startswith(base+'/') or base.startswith(path+'/') for path in scopes for base in critical):risk='CRITICAL'
+            elif any(path=='shared-core' or path.startswith('shared-core/') for path in scopes):risk='HIGH'
+            if risk in ('HIGH','CRITICAL') and principal.role in ('ANTI_WORKER','SUBAGENT'):
+                raise Denied('PROTECTED_SCOPE_APPROVAL_REQUIRED',403)
         if principal.role in ('ANTI_WORKER','SUBAGENT') and action in ('source.read','source.write'):
             if scopes is None:
                 raise Denied('EXPLICIT_WORKER_SCOPE_REQUIRED',403)
@@ -190,7 +196,8 @@ class GovernanceStore:
             if any(path==base or path.startswith(base+'/') or base.startswith(path+'/') for path in scopes for base in forbidden):
                 raise Denied('CANT_EDIT_PROTECTED_SCOPE',403)
         return {'risk':risk,'role':principal.role,'subject':principal.subject,
-                'isolation_level':'LOGICAL_ONLY','production_trusted':False}
+                'isolation_level':'LOGICAL_ONLY','production_trusted':False,
+                'policy_eligible':True,'execution_authorized':False,'approval_required':risk in ('HIGH','CRITICAL')}
 
     def authorize(self,principal,action,scope=None):
         with self.transaction() as db:

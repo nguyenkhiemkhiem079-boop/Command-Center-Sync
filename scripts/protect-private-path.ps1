@@ -2,6 +2,8 @@ param([Parameter(Mandatory=$true)][string]$LiteralPath)
 $ErrorActionPreference='Stop'
 $Item=Get-Item -LiteralPath $LiteralPath -Force
 if($Item.Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Refuse ACL update on reparse path'}
+$Ancestor=if($Item.PSIsContainer){$Item.Parent}else{$Item.Directory}
+while($Ancestor){if($Ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Refuse ACL update through reparse ancestor'};$Ancestor=$Ancestor.Parent}
 $Acl=Get-Acl -LiteralPath $Item.FullName
 $Acl.SetAccessRuleProtection($true,$false)
 foreach($Rule in @($Acl.Access)){$null=$Acl.RemoveAccessRuleSpecific($Rule)}

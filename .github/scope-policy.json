@@ -9,7 +9,12 @@
     "server.py",
     "governance.py",
     "trust_vault.py",
-    "shared-core"
+    "shared-core",
+    "config",
+    "qa_runner.py",
+    "ci_scope_gate.py",
+    "scripts",
+    "UPGRADE_EXISTING_MCP.ps1"
   ],
   "assignments": {
     "CI-PILOT": {

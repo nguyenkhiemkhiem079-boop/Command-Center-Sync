@@ -64,4 +64,9 @@ class GovernanceTests(unittest.TestCase):
         r=g.request_approval(lead,'M','merge',['architectural/envelope'],'a'*40,self.expiry(),'A');g.approve(owner,r['request_id'])
         with g.transaction() as db:db.execute("UPDATE cc_assignments SET epoch=epoch+1 WHERE id='A'")
         with self.assertRaisesRegex(Denied,'STALE_APPROVAL_OWNERSHIP_CONTRACT'):g.consume_approval(lead,r['request_id'],'merge',['architectural/envelope'],'a'*40)
+    def test_policy_query_does_not_authorize_critical_execution(self):
+        g=self.gov();lead=g.authenticate('Bearer fixture-codex')
+        decision=g.authorize(lead,'merge',['module'])
+        self.assertTrue(decision['approval_required']);self.assertFalse(decision['execution_authorized'])
+        self.assertEqual(g.authorize(g.authenticate('Bearer fixture-owner'),'release')['risk'],'CRITICAL')
 if __name__=='__main__':unittest.main()

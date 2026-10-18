@@ -1,0 +1,41 @@
+name: Protected scope verifier proposal
+on:
+  workflow_dispatch:
+    inputs:
+      base_sha:
+        description: Exact approved protected branch HEAD
+        required: true
+        type: string
+      candidate_sha:
+        description: Immutable candidate to inspect, never execute
+        required: true
+        type: string
+      assignment:
+        description: Assignment in approved base policy
+        required: true
+        default: CI-PILOT
+        type: string
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/integration/command-center-qa' && github.actor == 'nguyenkhiemkhiem079-boop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Inspect candidate using only protected base code
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          TRUSTED_BASE_SHA: ${{ github.sha }}
+          ASSIGNMENT: ${{ inputs.assignment }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          test "$BASE_SHA" = "$TRUSTED_BASE_SHA"
+          git -c core.hooksPath=/dev/null fetch origin "$CANDIDATE_SHA"
+          python ci_scope_gate.py --repo "$GITHUB_WORKSPACE" --base "$BASE_SHA" --commit "$CANDIDATE_SHA" --policy .github/scope-policy.json --assignment "$ASSIGNMENT" --repository "$REPOSITORY"
