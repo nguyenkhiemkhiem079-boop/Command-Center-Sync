@@ -1,5 +1,7 @@
-# Failover & Recovery
+# CODEX_FAILOVER_AND_RECOVERY_REPORT — Full Fix delta
 
-NORMAL/LEAD_UNAVAILABLE/RECOVERY_REQUIRED/EMERGENCY_STOP có. Lead loss cho phép previously authorized checkpoint, chuyển review chờ Codex, không cho worker tự duyệt. Stale epochs/checkpoints bị deny. Frozen locks không tự nhả.
+Source `552197b91b09c955d0fb48f96e329eba20b98f64`; evidence date18/10/2026. Supersedes earlier progress claims; full acceptance remains false.
 
-OwnedProcessRegistry dùng process handle/creation identity và opaque proof; không arbitrary PID/checkbox. Khi controller restart mất ownership handle -> fail-closed, cần human recovery; descendant tree UNKNOWN. SQLite actual backup/restore integrity tested. 23-check standalone coordinator process drill PASS ở baseline. Windows reboot và actual Google quota exhaustion NOT_EXECUTED. Automatic lead detector/overdue watchdog và complete result aggregator còn PARTIAL.
+Modes NORMAL / LEAD_UNAVAILABLE / RECOVERY_REQUIRED / EMERGENCY_STOP preserve mission/assignments/ownership. Previously authorized checkpoints and Self-QA claims may continue during lead loss; review queues wait for CODEX. Worker never becomes final reviewer. Supervisor tick makes no provider calls and grants no fallback privileges.
+
+Actual local process recovery drill: 23 checks PASS; actual coordinator crash/restart, Git/SQLite isolated restore and integrity, stale fencing, frozen locks and safe context checks tested. New source bundle/log/contract/epoch checkpoint envelopes reject tamper. New backup integrity failure stops certification. Emergency controls block new work/integration; Antigravity termination is not claimed. Windows reboot and real provider quota exhaustion NOT_EXECUTED (quota interruption policy tested as fixture). Production frozen locks retained.

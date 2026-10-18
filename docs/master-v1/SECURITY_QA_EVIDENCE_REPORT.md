@@ -1,9 +1,9 @@
-# Security QA evidence
+# SECURITY_QA_EVIDENCE_REPORT — Full Fix delta
 
-Baseline e80e26f: 151/151 local regression PASS; log ../qa/final-regression.txt. Protected CI acceptance vẫn BLOCKED; fake SHA, mismatched tree/paths/profile, stale evidence và synthetic CI bị từ chối. LOCAL_VERIFIED chỉ consistency, không chứng minh command execution bởi independent principal.
+Source `552197b91b09c955d0fb48f96e329eba20b98f64`; evidence date18/10/2026. Supersedes earlier progress claims; full acceptance remains false.
 
-Human Request delta: test_human_requests 4/4 PASS; migration giữ legacy rows, deadline canonical/reject naive+past, expired decisions deny, worker/checkbox cannot resolve, resolved request cannot replay. Test owner callback là TEST_FIXTURE cho persistence, không chứng minh production owner authentication. Full regression delta: 155/155 PASS, 114.168s, log full-regression.txt.
+Actual adversarial regressions cover role spoofing, cross-store principals, wrong-owner operations, expired/replayed approvals, fabricated Git SHA, incorrect ancestry/tree, tampered profiles/artifacts, stale ownership, symlink/junction paths and fabricated hosted verifier callback. Local matches remain non-production evidence. A malicious process under the same Windows principal can modify local files; SHA256 binds integrity, not independent trust.
 
-Còn thiếu: six-role identity registry, risk classifier, tamper-evident external audit anchor, protected principal and workflow/policy. Không đưa token stores/live SQLite vào Git.
+New evidence bindings include contract hash, workflow revision, verifier identity and NOT_APPROVED status; worker cannot rebind local evidence APPROVED. Windows ACL fixture removed explicit Everyone access and rejected junction ancestors; live credentials were observed preserved, never copied into Git/logs. New SQLite backup test creates real invalid CHECK data and rejects certification.
 
-Read-only independent agent audit phát hiện: provisioner hiện /inheritance:r và /grant:r không chứng minh đã loại bỏ mọi explicit broad ACE; chưa kết luận actual token files đang có broad ACL. Upgrade script còn legacy-file inventory, không được dùng nó như full V2 deployment procedure. Những việc này được giữ PARTIAL và ưu tiên trước rollout; không sửa credentials hoặc ACL thật trong đợt này.
+Hosted scope pilot now exists: PR1 success/run39133452978, PR2 expected rejection/run39133453324. This is not full protected build provenance. Branch protection awaits GitHub Confirm access; pull_request workflow mutability remains a separate trust limitation. Production QA acceptance stays BLOCKED.

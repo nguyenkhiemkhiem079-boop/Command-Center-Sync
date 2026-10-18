@@ -1,153 +1,171 @@
 {
   "full_acceptance": false,
-  "phase": "PRE_SETUP_DELTA_IN_PROGRESS",
+  "phase": "FULL_FIX_SOURCE_AND_STAGING_VALIDATED_EXTERNAL_GATES_PENDING",
   "gates": [
     {
       "id": "QA-01",
-      "name": "Source & Migration",
+      "name": "Source integrity",
       "status": "PASS",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Baseline additive migration verified; new request migration tests PASS",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Local migration/regression/dry-run verified; live candidate upgrade not executed.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-01.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-02",
       "name": "Security",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Partial local RBAC; protected resources/principal incomplete",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Six-role adversarial tests pass locally; protected external principal absent.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-02.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-03",
-      "name": "Evidence",
+      "name": "Trusted evidence",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Adversarial local verification PASS; genuine hosted trust absent",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Local fake evidence rejected; hosted scope runs exist but protected build attestation absent.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-03.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-04",
       "name": "Worksharing",
       "status": "PASS",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Local scope/resources/fencing tests; no OS isolation claim",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Local actual Git/scope/fencing/resources tests pass; no same-user OS isolation claim.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-04.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-05",
-      "name": "Dispatcher",
+      "name": "Dispatcher and OMS",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Local concurrency/ACK/DAG passes; durable transport timeout/retries incomplete",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Local durable ACK/retry/DAG/barrier/steering verified; real Anti deliveries pending supervised launch.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-05.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-06",
-      "name": "Git Integration",
+      "name": "Transaction sync",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Disposable integration verified; protected Central backend/CI missing",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Disposable conflict/CAS/combined-QA preserve Central; production writer/approval disabled.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-06.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-07",
       "name": "Feedback",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Fixture rework verified; actual Anti QA loop NOT_EXECUTED",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Local fixture correction loop verified; actual Anti/Codex loop not demonstrated.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-07.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-08",
       "name": "Recovery",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Coordinator/process/SQLite local PASS; full Windows restart NOT_EXECUTED",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS",
+      "reason": "Actual process/SQLite recovery verified; Windows reboot and real quota interruption not executed.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/passes-verified/QA-08.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "8a3b275899076a0d803a91a24f1207b882bc3d2a"
     },
     {
       "id": "QA-09",
-      "name": "Runtime & UI",
+      "name": "Runtime and UI",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Windows browser/local MCP PASS; two real sessions missing",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "PASS_LOCAL_BROWSER_AND_MCP",
+      "reason": "Actual Windows browser/MCP verified; native two sessions/time overlap unavailable.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/QA-09.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64"
     },
     {
       "id": "QA-10",
-      "name": "Final Acceptance",
+      "name": "Final engineering acceptance",
       "status": "BLOCKED",
-      "scope": "Master Scope v1.0 full gate",
-      "reason": "Full real mission/owner-authorized protected integration not demonstrated",
-      "baseline_sha": "e80e26ff1ec4f09505a4608192e195d52e80f503",
+      "scope": "Full master acceptance; local execution result separate",
+      "local_execution": "ENGINEERING_REVIEW_COMPLETE",
+      "reason": "Required real mission and owner-authorized protected integration not demonstrated.",
       "evidence": [
-        "../qa/final-regression.txt",
-        "MASTER_FEATURE_CROSSWALK.md"
+        "evidence-full-fix/QA-10.json"
       ],
-      "not_executed_is_pass": false
+      "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+      "focused_pass_source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64"
     }
   ],
-  "delta_regression": {
+  "regression": {
     "status": "PASS",
-    "executed_command": "C:/KTOOL/CommandCenter/venv/Scripts/python.exe -m unittest discover -s tests -v",
-    "tests": 155,
-    "elapsed_seconds": 114.168,
-    "evidence": "full-regression.txt",
-    "execution_environment": "LOCAL_WINDOWS_SHARED_PRINCIPAL",
-    "production_provenance": "NOT_ESTABLISHED",
-    "code_sha": "7f6629f647c9007e582382271134afc535a750af",
-    "binding": "POST_RUN_LOCAL_CONTENT_BINDING_NOT_TRUSTED_ATTESTATION"
+    "tests": 196,
+    "seconds": 173.942,
+    "command": "C:/KTOOL/CommandCenter/venv/Scripts/python.exe -m unittest discover -s tests -v",
+    "source_sha": "552197b91b09c955d0fb48f96e329eba20b98f64",
+    "evidence": "evidence-full-fix/release-candidate-regression.log",
+    "provenance": "LOCAL_WINDOWS_SHARED_PRINCIPAL_NOT_PRODUCTION_TRUSTED",
+    "note": "Runtime source unchanged during run; documentation edited separately."
   },
   "deployment": {
-    "status": "PASS_LOCAL_INSTALLATION",
     "installed_sha": "c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d",
-    "evidence": "deployment-live-validation.json",
-    "full_master_acceptance": false
-  }
+    "candidate_applied": false,
+    "url": "http://127.0.0.1:8876/ui",
+    "staging_url": "http://127.0.0.1:8878/ui"
+  },
+  "ci_pilot": {
+    "positive_run": 39133452978,
+    "positive_conclusion": "success",
+    "negative_run": 39133453324,
+    "negative_conclusion": "failure",
+    "negative_expected_rejection": true,
+    "protection": "PENDING_GITHUB_SUDO_VERIFICATION",
+    "merged": false
+  },
+  "not_executed": [
+    "Two independent native Teamwork sessions",
+    "Real Antigravity subagent execution/rework",
+    "Protected hosted combined build provenance",
+    "Windows reboot",
+    "Non-critical K-TOOL pilot owner repo/branch approval",
+    "Revit2025 runtime",
+    "Long-running native mission",
+    "Protected merge/release"
+  ]
 }
