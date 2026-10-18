@@ -1,4 +1,4 @@
-"""K-TOOL v0.6 loopback registry, operator dashboard and recovery API."""
+"""K-TOOL v0.7 loopback registry, operator dashboard and recovery API."""
 from __future__ import annotations
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -11,16 +11,41 @@ from urllib.parse import urlsplit
 from registry import Registry, identify, Denied
 
 OPS = ('status','heartbeat','create_task','assign_task','get_task','checkpoint','submit_self_qa','submit_result','acknowledge_feedback','feedback_history','freeze','review_task','read_review','close_task','report','audit','control_status','emergency_stop','resume_control','resume_frozen_task','stale_sweep','qa_evidence')
+CONTROL_OPS = ('control_snapshot','get_assignment','acknowledge_assignment','assignment_checkpoint','assignment_submit_claim','steering_ack','propose_contract','read_approved_contract','publish_revision','create_mission','queue_wave','dispatch','steer','human_request')
 WEB = Path(__file__).resolve().with_name('web')
 SESSION_TTL = 8*3600
 
 
 def handler_factory(store: Registry, hashes: dict):
+    def controller():
+        from orchestration import ControlStore
+        return ControlStore(store.dbfile)
+
+    def control_call(role,op,args):
+        c=controller()
+        if op not in ('control_snapshot','get_assignment','read_approved_contract','human_request','steering_ack'):
+            if store.control_status('CODEX')['mode']!='NORMAL':raise Denied('LEGACY_CONTROL_FROZEN',423)
+        if op=='control_snapshot':return c.snapshot(role)
+        if op=='get_assignment':return c.get_assignment(role,args['assignment'])
+        if op=='acknowledge_assignment':return c.acknowledge(role,args['assignment'],args['epoch'],args['contract_hash'])
+        if op=='assignment_checkpoint':return c.checkpoint(role,args['assignment'],args['epoch'],args['commit'],args['changed_paths'],args['build_evidence'],args.get('blockers'),args.get('artifacts'))
+        if op=='assignment_submit_claim':return c.submit_claim(role,args['assignment'],args['epoch'])
+        if op=='steering_ack':return c.acknowledge_steering(role,args['steering'],args['target'])
+        if op=='propose_contract':return c.propose_contract(role,args['contract_id'],args['content'],args.get('affects_baseline',True))
+        if op=='read_approved_contract':return c.get_contract(role,args['contract_hash'])
+        if op=='publish_revision':return c.publish_revision(role,args['content'])
+        if op=='create_mission':return c.create_mission(role,args['mission'],args['revision'],args.get('policy'))
+        if op=='queue_wave':return c.queue_wave(role,args['mission'],args['wave'],args['assignments'],args.get('parent'))
+        if op=='dispatch':return c.dispatch(role,args.get('capabilities'))
+        if op=='steer':return c.steer(role,args['mission'],args['assignment'],args['target'],args['context_version'],args['instruction'])
+        if op=='human_request':return c.human_request(role,args['mission'],args['kind'],args['body'],args.get('assignment'))
+        raise ValueError('unknown control op')
+
     sessions = {}
     session_lock = Lock()
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = 'KTOOL-Local-Registry/0.6'
+        server_version = 'KTOOL-Local-Registry/0.7'
 
         def respond(self, code, data, extra=None):
             payload=json.dumps(data,ensure_ascii=False).encode('utf-8')
@@ -90,6 +115,30 @@ def handler_factory(store: Registry, hashes: dict):
                 wave_id=parse_qs(urlsplit(self.path).query).get('wave_id',['PILOT'])[0]
                 try: return self.respond(200,{'ok':True,'result':store.report('CODEX',wave_id)})
                 except ValueError as exc: return self.respond(400,{'error':str(exc)})
+            if path=='/ui/api/run-studio':
+                if not self._session():return self.respond(401,{'error':'LOGIN_REQUIRED'})
+                try:
+                    from orchestration import ControlStore
+                    snapshot=ControlStore(store.dbfile).snapshot('CODEX')
+                    return self.respond(200,{'ok':True,'result':snapshot})
+                except Denied as exc:return self.respond(exc.http_status,{'error':str(exc)})
+                except ImportError:return self.respond(503,{'error':'CONTROL_STORE_UNAVAILABLE'})
+                except Exception:return self.respond(500,{'error':'CONTROL_STORE_READ_FAILED'})
+            if path=='/ui/api/task-evidence':
+                sess=self._session()
+                if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
+                from urllib.parse import parse_qs
+                tid=parse_qs(urlsplit(self.path).query).get('tid',[''])[0]
+                try:
+                    task=store.read_review('CODEX',tid)
+                    return self.respond(200,{'ok':True,'result':{
+                        'task':task,'feedback':store.feedback_history('CODEX',tid),
+                        'independent_qa':store.qa_evidence('CODEX',tid),
+                        'provenance':'REGISTRY_RECORDED_ONLY',
+                        'simulation':'UNKNOWN_UNLESS_IDENTIFIED_IN_EVIDENCE',
+                        'diff_content':'NOT_LOADED','release':'OWNER_APPROVAL_REQUIRED'}})
+                except Denied as exc:return self.respond(exc.http_status,{'error':str(exc)})
+                except ValueError as exc:return self.respond(400,{'error':str(exc)})
             if path=='/ui/api/snapshot':
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
@@ -105,8 +154,9 @@ def handler_factory(store: Registry, hashes: dict):
                 try:
                     body=self._json_body(20000)
                     op=body.get('op'); args=body.get('args',{})
-                    if op not in OPS or not isinstance(args,dict):raise ValueError('unknown op')
-                    if op=='status': result=store.status(role)
+                    if op not in OPS+CONTROL_OPS or not isinstance(args,dict):raise ValueError('unknown op')
+                    if op in CONTROL_OPS: result=control_call(role,op,args)
+                    elif op=='status': result=store.status(role)
                     elif op=='heartbeat': result=store.heartbeat(role,args.get('event','AVAILABLE'))
                     elif op=='create_task': result=store.create_task(role,args['tid'],args['title'],args['scope'],args['contract'],args['base_sha'],args.get('wave_id','PILOT'),args.get('requires_preview',True),args.get('exclusive_resources',[]),args.get('depends_on',[]))
                     elif op=='assign_task': result=store.assign(role,args['tid'],args['owner'])
@@ -123,7 +173,9 @@ def handler_factory(store: Registry, hashes: dict):
                     elif op=='read_review': result=store.read_review(role,args['tid'])
                     elif op=='audit': result=store.audit(role)
                     elif op=='control_status': result=store.control_status(role)
-                    elif op=='emergency_stop': result=store.emergency_stop(role,args['reason'])
+                    elif op=='emergency_stop':
+                        result=store.emergency_stop(role,args['reason'])
+                        controller().set_mode(role,'EMERGENCY_STOP')
                     elif op=='resume_control': result=store.resume_control(role,args.get('workers_stopped'),args.get('backup_verified'),args.get('operator_approval'))
                     elif op=='resume_frozen_task': result=store.resume_frozen_task(role,args['tid'],args['owner'],args.get('worker_stopped'),args.get('checkpoint_verified'))
                     elif op=='stale_sweep': result=store.stale_sweep(role,args.get('max_age_seconds',180))
@@ -153,7 +205,11 @@ def handler_factory(store: Registry, hashes: dict):
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})
                 if self.headers.get('X-KTOOL-CSRF','')!=sess['csrf']:
                     return self.respond(403,{'error':'CSRF_TOKEN_MISMATCH'})
-                if path=='/ui/api/create':
+                if path=='/ui/api/backup':
+                    from backup_registry import backup
+                    db_path=Path(store.dbfile)
+                    result=backup(db_path,db_path.parent/'backups')
+                elif path=='/ui/api/create':
                     result=store.create_task('CODEX',body['tid'],body['title'],body['scope'],body['contract'],body['base_sha'],body.get('wave_id','PILOT'),body.get('requires_preview',True),body.get('exclusive_resources',[]),body.get('depends_on',[]))
                 elif path=='/ui/api/assign':
                     result=store.assign('CODEX',body['tid'],body['owner'])
@@ -165,6 +221,7 @@ def handler_factory(store: Registry, hashes: dict):
                     result=store.freeze('CODEX',body['tid'],body['reason'])
                 elif path=='/ui/api/emergency-stop':
                     result=store.emergency_stop('CODEX',body['reason'])
+                    controller().set_mode('CODEX','EMERGENCY_STOP')
                 elif path=='/ui/api/resume-control':
                     result=store.resume_control('CODEX',body.get('workers_stopped'),body.get('backup_verified'),body.get('operator_approval'))
                 elif path=='/ui/api/stale-sweep':
@@ -207,7 +264,13 @@ def main():
         from backup_registry import backup
         print('Startup SQLite backup:',backup(db_path,db_path.parent/'backups'),flush=True)
     store=Registry(args.db)
+    from orchestration import ControlStore
+    control=ControlStore(args.db)
+    control_startup=control.reconcile_startup()
     startup=store.reconcile_startup()
+    if store.control_status('CODEX')['mode']!='NORMAL':
+        control.set_mode('CODEX','EMERGENCY_STOP' if store.control_status('CODEX')['mode']=='EMERGENCY_STOP' else 'RECOVERY_REQUIRED')
+    print('Orchestration recovery:',control_startup,flush=True)
     print('Recovery reconciliation:',startup,flush=True)
     httpd=ThreadingHTTPServer(('127.0.0.1',args.port),handler_factory(store,roles))
     print(f'K-TOOL Task Registry & Dashboard: http://127.0.0.1:{args.port}/ui',flush=True)

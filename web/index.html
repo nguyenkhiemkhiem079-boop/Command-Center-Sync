@@ -7,23 +7,26 @@
     <div class="nav-label">WORKSPACE</div>
     <nav id="nav">
       <button data-page="overview" class="navitem selected"><span class="sym">▦</span> Dashboard</button>
+      <button data-page="studio" class="navitem"><span class="sym">◈</span> Run Studio</button>
       <button data-page="tasks" class="navitem"><span class="sym">☷</span> Task Board <span class="navcount" id="taskCount">0</span></button>
       <button data-page="locks" class="navitem"><span class="sym">◇</span> Worksharing Locks</button>
       <button data-page="qa" class="navitem"><span class="sym">✓</span> Quality Assurance</button>
+      <button data-page="git" class="navitem"><span class="sym">⑂</span> Git &amp; Diff</button>
+      <button data-page="sessions" class="navitem"><span class="sym">◇</span> Teamwork &amp; Sessions</button>
       <button data-page="report" class="navitem"><span class="sym">▤</span> Codex Reports</button>
       <button data-page="recovery" class="navitem"><span class="sym">⛨</span> Recovery Center</button>
       <button data-page="audit" class="navitem"><span class="sym">↺</span> Activity Log</button>
     </nav>
     <div class="side-bottom">
       <div class="online-row"><span class="online-dot"></span><span>Local Registry <strong>ONLINE</strong></span></div>
-      <div class="version">PILOT 0.6 · RECOVERY / FAIL-CLOSED</div>
+      <div class="version">v0.7 · LOGICAL_ONLY / FAIL-CLOSED</div>
       <button id="logoutBtn" class="side-logout">↪ &nbsp; Đăng xuất Dashboard</button>
     </div>
   </aside>
   <main class="main">
     <header class="topbar"><div class="crumb"><span>K-TOOL</span><span class="chev">/</span><b id="pageName">Overview</b></div><div class="topactions"><span class="refreshinfo"><i></i> Làm mới mỗi 5 giây</span><button id="refreshBtn" class="btn ghost">↻ Làm mới</button><button id="newTaskBtn" class="btn primary">+ Tạo task</button></div></header>
     <div class="page-wrap">
-      <div class="page-heading"><div><div class="eyebrow">MULTI-AGENT ORCHESTRATION</div><h1 id="heading">Mission Control</h1><p id="subheading">Hai Anti phát triển đồng thời; Codex điều phối, QA và báo cáo.</p></div><div class="pill-quiet">● &nbsp; PILOT MODE</div></div>
+      <div class="page-heading"><div><div class="eyebrow">MULTI-AGENT ORCHESTRATION</div><h1 id="heading">Mission Control</h1><p id="subheading">Hai đội Development được cấu hình; phiên thực tế cần bằng chứng riêng.</p></div><div class="pill-quiet">● &nbsp; PILOT MODE</div></div>
       <div id="notice" class="notice"><span class="notice-ico">ⓘ</span><div><b>Chưa kết nối Antigravity thực tế</b><span>Dashboard đang hiển thị dữ liệu Task Registry. Teamwork, CI và Revit runtime chưa được nghiệm thu.</span></div></div>
       <section id="content"></section>
     </div>

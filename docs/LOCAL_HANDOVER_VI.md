@@ -1,4 +1,6 @@
-# Bàn giao local pilot — 18/10/2026
+# Lưu trữ hướng dẫn v0.6 — đã được thay thế
+
+**Không làm theo phần tạo Windows user trong tài liệu này. Kiến trúc v0.7 dùng một Windows user; đọc [runbook mới](SINGLE_WINDOWS_V07.md).**
 
 Coordinator được cài tại `C:\KTOOL\CommandCenter\MCP`, Python venv tại `C:\KTOOL\CommandCenter\venv`.
 Dashboard: http://127.0.0.1:8876/ui. Chỉ CODEX token được đăng nhập; không đưa token vào chat.

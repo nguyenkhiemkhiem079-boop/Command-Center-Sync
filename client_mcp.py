@@ -1,30 +1,58 @@
 """K-TOOL MCP stdio tools for CODEX and both independent Antigravity workers.
 
-Each local Windows account reads its own client token; never pass Google OAuth tokens here.
+Each process pins an explicit identity and credential file; no shared-token fallback.
 """
 from __future__ import annotations
 import json
+import argparse
 import os
 from pathlib import Path
 import urllib.error
 import urllib.request
 from mcp.server.fastmcp import FastMCP
 
-mcp=FastMCP('K-TOOL Worksharing Recovery v0.6')
+mcp=FastMCP('K-TOOL Worksharing Recovery v0.7')
 PORT=os.environ.get('KTOOL_COORDINATOR_PORT','8876')
+if not PORT.isdecimal() or not 1 <= int(PORT) <= 65535:
+    raise RuntimeError('Invalid loopback coordinator port')
 URL='http://127.0.0.1:'+PORT+'/rpc'
 
-def _token_file():
-    home=Path(os.environ.get('APPDATA') or Path.home()/'.config')
-    return home/'KTOOLMCP'/'client_token.txt'
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # The coordinator never redirects. Keep bearer credentials on its endpoint.
+        return None
 
-def _call(op,**args):
-    token=_token_file().read_text(encoding='utf-8').strip()
-    if not token:raise RuntimeError('Missing client token')
-    req=urllib.request.Request(URL,data=json.dumps({'op':op,'args':args}).encode('utf-8'),method='POST',headers={
-        'Authorization':'Bearer '+token,'Content-Type':'application/json'})
+_HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+
+_TOKEN = None
+_IDENTITY = None
+
+def configure(identity, token_path):
+    global _TOKEN, _IDENTITY
+    if identity not in ('CODEX', 'ANTI-01', 'ANTI-02') or not token_path:
+        raise RuntimeError('Explicit identity and token path required')
+    token = Path(token_path).read_text(encoding='utf-8').strip()
+    if not token:
+        raise RuntimeError('Missing client token')
+    _TOKEN, _IDENTITY = token, identity
     try:
-        with urllib.request.urlopen(req,timeout=12) as response:return json.loads(response.read())
+        result = _request('status')
+        if not result.get('ok') or result.get('result', {}).get('actor') != identity:
+            raise RuntimeError('Coordinator identity verification failed')
+    except Exception:
+        _TOKEN, _IDENTITY = None, None
+        raise RuntimeError('Coordinator identity verification failed') from None
+
+def _call(op, **args):
+    if _TOKEN is None or _IDENTITY is None:
+        raise RuntimeError('Adapter identity not verified')
+    return _request(op, **args)
+
+def _request(op,**args):
+    req=urllib.request.Request(URL,data=json.dumps({'op':op,'args':args}).encode('utf-8'),method='POST',headers={
+        'Authorization':'Bearer '+_TOKEN,'Content-Type':'application/json'})
+    try:
+        with _HTTP.open(req,timeout=12) as response:return json.loads(response.read())
     except urllib.error.HTTPError as err:
         try: message=json.loads(err.read()).get('error','HTTP_ERROR')
         except Exception: message='HTTP_ERROR'
@@ -143,4 +171,87 @@ def independent_qa_evidence(tid:str)->dict:
     """Codex: read independent QA runner records. Missing record = NOT EXECUTED."""
     return _call('qa_evidence',tid=tid)
 
-if __name__=='__main__':mcp.run(transport='stdio')
+def main(argv=None):
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--identity', choices=('CODEX','ANTI-01','ANTI-02'), default=os.environ.get('KTOOL_IDENTITY'))
+    parser.add_argument('--token-file', default=os.environ.get('KTOOL_TOKEN_FILE'))
+    opts=parser.parse_args(argv)
+    try:
+        configure(opts.identity, opts.token_file)
+    except Exception:
+        parser.exit(2, 'K-TOOL identity verification failed; check identity, credential path and coordinator.\n')
+    mcp.run(transport='stdio')
+
+
+@mcp.tool()
+def control_snapshot()->dict:
+    """CODEX: read durable mission orchestration; provider/session status remains evidence-bound."""
+    return _call('control_snapshot')
+
+@mcp.tool()
+def get_assignment(assignment:str)->dict:
+    """Read own assignment; CODEX may read all. Does not grant write approval."""
+    return _call('get_assignment',assignment=assignment)
+
+@mcp.tool()
+def acknowledge_assignment(assignment:str,epoch:int,contract_hash:str)->dict:
+    """Assigned worker acknowledges its exact approved immutable contract and epoch."""
+    return _call('acknowledge_assignment',assignment=assignment,epoch=epoch,contract_hash=contract_hash)
+
+@mcp.tool()
+def assignment_checkpoint(assignment:str,epoch:int,commit:str,changed_paths:list[str],build_evidence:dict,blockers:list[str]|None=None,artifacts:list[str]|None=None)->dict:
+    """Worker submits actual Git candidate and untrusted QA evidence for independent review."""
+    return _call('assignment_checkpoint',assignment=assignment,epoch=epoch,commit=commit,changed_paths=changed_paths,build_evidence=build_evidence,blockers=blockers or [],artifacts=artifacts or [])
+
+@mcp.tool()
+def assignment_submit_claim(assignment:str,epoch:int)->dict:
+    """Worker requests review; provider completion never implies acceptance."""
+    return _call('assignment_submit_claim',assignment=assignment,epoch=epoch)
+
+@mcp.tool()
+def steering_ack(steering:str,target:str)->dict:
+    """Owning worker acknowledges steering delivered to its exact target."""
+    return _call('steering_ack',steering=steering,target=target)
+
+@mcp.tool()
+def propose_contract(contract_id:str,content:dict,affects_baseline:bool=True)->dict:
+    """CODEX proposes a contract; this never approves the proposal."""
+    return _call('propose_contract',contract_id=contract_id,content=content,affects_baseline=affects_baseline)
+
+@mcp.tool()
+def read_approved_contract(contract_hash:str)->dict:
+    """Read immutable approved contract; unapproved proposals are denied."""
+    return _call('read_approved_contract',contract_hash=contract_hash)
+
+@mcp.tool()
+def publish_revision(content:dict)->dict:
+    """CODEX publishes a revision pinned to already approved contracts."""
+    return _call('publish_revision',content=content)
+
+@mcp.tool()
+def create_mission(mission:str,revision:str,policy:dict|None=None)->dict:
+    """CODEX creates mission under approved revision; no release approval."""
+    return _call('create_mission',mission=mission,revision=revision,policy=policy)
+
+@mcp.tool()
+def queue_wave(mission:str,wave:str,assignments:list[dict],parent:str|None=None)->dict:
+    """CODEX queues bounded worker assignments; does not start provider execution."""
+    return _call('queue_wave',mission=mission,wave=wave,assignments=assignments,parent=parent)
+
+@mcp.tool()
+def dispatch(capabilities:dict|None=None)->dict:
+    """CODEX allocates eligible scopes/epochs; does not remotely control Antigravity."""
+    return _call('dispatch',capabilities=capabilities)
+
+@mcp.tool()
+def steer(mission:str,assignment:str,target:str,context_version:str,instruction:str)->dict:
+    """Queue advisory steering for an exact active owner/member and revision."""
+    return _call('steer',mission=mission,assignment=assignment,target=target,context_version=context_version,instruction=instruction)
+
+@mcp.tool()
+def human_request(mission:str,kind:str,body:str,assignment:str|None=None)->dict:
+    """Record input/direction/review/approval request; never grants approval."""
+    return _call('human_request',mission=mission,kind=kind,body=body,assignment=assignment)
+
+if __name__=='__main__':
+    main()
