@@ -10,6 +10,9 @@ const palette = {
 const STATUS_COLOR = {
   ASSIGNED: palette.blue, ACKNOWLEDGED: palette.cyan, IN_PROGRESS: palette.green,
   AWAITING_QA: palette.amber, FEEDBACK_REQUESTED: palette.violet,
+  AWAITING_CODEX_REVIEW: palette.amber, REVIEW_PASSED: palette.cyan,
+  INTEGRATION_PENDING: palette.blue, INTEGRATION_QA: palette.amber,
+  APPROVAL_PENDING: palette.violet, INTEGRATED: palette.green,
   BLOCKED: palette.red, ACCEPTED: palette.green, UNKNOWN: palette.muted,
 };
 const PRESETS = {
@@ -188,7 +191,7 @@ function detailText(agent, task) {
     const inherited = agent.role === 'SUBAGENT' ? `\nParent team: ${agent.parent}\nParent assignment: ${agent.assignment}\n` : '';
     return `${agent.id} · ${agent.role}\nMCP: ${agent.mcp}\nAntigravity runtime: ${agent.runtime}\nTeamwork: ${agent.teamwork}\nEvidence: ${agent.evidenceClass}${inherited}\nGit branch/worktree: UNKNOWN unless explicitly recorded\nSource: ${agent.source}\nObserved: ${agent.lastObservedAt}\nAssignments:\n${taskText}`;
   }
-  if (task) return `${task.id} · ${task.title}\nOwner: ${task.owner}\nState: ${task.state} (controller/Registry record)\nScope: ${task.scope}\nWave: ${task.wave}\nMission: ${task.mission}\nCheckpoint recorded: ${task.checkpoint ? 'YES — controller metadata' : 'NO'}\nEvidence class: ${task.evidence}`;
+  if (task) return `${task.id} · ${task.title}\nOwner: ${task.owner}\nState: ${task.state} (controller/Registry record)\nReview: ${task.reviewState}\nIntegration: ${task.integrationState}\nApproval: ${task.approvalState}\nAcceptance: ${task.acceptanceState}\nObservation: ${task.freshness} · ${task.lastObservedAt}\nScope: ${task.scope}\nWave: ${task.wave}\nMission: ${task.mission}\nCheckpoint recorded: ${task.checkpoint ? 'YES — controller metadata' : 'NO'}\nEvidence class: ${task.evidence}`;
   return 'Select an agent, workstation, task path or office zone to inspect controller-recorded metadata.';
 }
 

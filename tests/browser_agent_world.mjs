@@ -12,6 +12,8 @@ const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
 }));
 if (!args.url || !args.tokenFile || !args.screenshot || !args.report) throw new Error('url, tokenFile, screenshot and report are required');
 const expectFallback = args.expectFallback === 'true';
+const physicalGpu = args.physicalGpu === 'true';
+const soakMs = Math.max(0, Math.min(Number(args.soakMs) || 0, 180000));
 const browser = args.browser || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const token = (await readFile(args.tokenFile, 'utf8')).trim();
 if (!token) throw new Error('Disposable staging token is empty');
@@ -27,10 +29,10 @@ async function freePort() {
 const port = await freePort();
 const profile = await mkdtemp(join(tmpdir(), 'ktool-agent-world-chrome-'));
 const chrome = spawn(browser, [
-  '--headless=new', ...(expectFallback ? ['--disable-webgl'] : ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']),
+  ...(physicalGpu ? ['--enable-webgl', '--use-angle=d3d11'] : ['--headless=new', ...(expectFallback ? ['--disable-webgl'] : ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])]),
   '--remote-allow-origins=*', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--window-size=1600,1100', 'about:blank',
-], { stdio: 'ignore', windowsHide: true });
+], { stdio: 'ignore', windowsHide: !physicalGpu });
 let socket;
 const errors = [];
 const externalRequests = [];
@@ -69,11 +71,11 @@ try {
       if (found) found.status = response.status;
     }
   });
-  const send = (method, params = {}) => new Promise((ok, fail) => {
+  const send = (method, params = {}, timeoutMs = 15000) => new Promise((ok, fail) => {
     const id = ++sequence;
     methods.set(id, { resolve: ok, reject: fail });
     socket.send(JSON.stringify({ id, method, params }));
-    setTimeout(() => { if (methods.has(id)) { methods.delete(id); fail(new Error(`CDP timeout: ${method}`)); } }, 15000).unref();
+    setTimeout(() => { if (methods.has(id)) { methods.delete(id); fail(new Error(`CDP timeout: ${method}`)); } }, timeoutMs).unref();
   });
   await Promise.all(['Page.enable', 'Runtime.enable', 'Network.enable', 'Log.enable'].map((method) => send(method)));
   await send('Page.navigate', { url: args.url });
@@ -119,6 +121,23 @@ try {
   if (!interactionResult?.fleetVisible || !interactionResult?.timelineVisible || interactionResult.worldSelected !== 'true' || !interactionResult.selected.startsWith('CODEX')) {
     throw new Error(`Interactive view/selection controls failed: ${JSON.stringify(interactionResult)}`);
   }
+  let gpuMeasurement = null;
+  let contextRecovery = null;
+  if (physicalGpu && !expectFallback && result.webgl2 && soakMs >= 10000) {
+    const measurement = await send('Runtime.evaluate', {
+      expression: `(()=>new Promise(resolve=>{const canvas=document.querySelector('#aw-canvas');const gl=canvas?.getContext('webgl2');if(!gl){resolve({error:'WEBGL2_UNAVAILABLE'});return}const info=gl.getExtension('WEBGL_debug_renderer_info');const renderer=info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):'RENDERER_HIDDEN';const frames=[];let lastDraw=0;for(const name of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced']){const original=gl[name]?.bind(gl);if(!original)continue;gl[name]=(...args)=>{const now=performance.now();if(now-lastDraw>20)frames.push(now);lastDraw=now;return original(...args)}}const heap=[];const memory=()=>performance.memory?.usedJSHeapSize??null;const initialHeap=memory();let peakHeap=initialHeap;const sampler=setInterval(()=>{const value=memory();if(value!==null){heap.push(value);peakHeap=Math.max(peakHeap||0,value)}},1000);const start=performance.now();setTimeout(()=>{clearInterval(sampler);const elapsed=performance.now()-start;const finalHeap=memory();resolve({renderer,elapsedMs:Math.round(elapsed),renderBatches:frames.length,fps:Math.round(frames.length*1000/elapsed*10)/10,heapStartBytes:initialHeap,heapEndBytes:finalHeap,heapPeakSampledBytes:peakHeap,heapSamples:heap.length,webglVersion:gl.getParameter(gl.VERSION)})},${soakMs})}))()`,
+      awaitPromise: true, returnByValue: true,
+    }, soakMs + 10000);
+    gpuMeasurement = measurement.result?.value || null;
+    if (!gpuMeasurement?.renderer || gpuMeasurement.error) throw new Error(`Physical GPU measurement failed: ${JSON.stringify(gpuMeasurement)}`);
+    if (/swiftshader|software|llvmpipe/i.test(gpuMeasurement.renderer)) throw new Error(`Software renderer detected; physical GPU evidence rejected: ${gpuMeasurement.renderer}`);
+    const recovery = await send('Runtime.evaluate', {
+      expression: `(()=>new Promise(resolve=>{const canvas=document.querySelector('#aw-canvas');const fallback=document.querySelector('#aw-fallback');const gl=canvas?.getContext('webgl2');const ext=gl?.getExtension('WEBGL_lose_context');if(!ext){resolve({status:'NOT_SUPPORTED'});return}let lost=false,restored=false;const onLost=e=>{e.preventDefault();lost=true};const onRestored=()=>{restored=true};canvas.addEventListener('webglcontextlost',onLost,{once:true});canvas.addEventListener('webglcontextrestored',onRestored,{once:true});ext.loseContext();setTimeout(()=>{const fallbackShown=Boolean(fallback&&!fallback.hidden&&fallback.getBoundingClientRect().height>0);ext.restoreContext();setTimeout(()=>resolve({status:lost&&restored?'PASS':'FAIL',lost,restored,fallbackShown,canvasVisible:!canvas.hidden}),1200)},500)}))()`,
+      awaitPromise: true, returnByValue: true,
+    }, 5000);
+    contextRecovery = recovery.result?.value || null;
+    if (contextRecovery?.status !== 'PASS' || !contextRecovery.fallbackShown) throw new Error(`WebGL context recovery failed: ${JSON.stringify(contextRecovery)}`);
+  }
   await delay(300);
   await mkdir(dirname(resolve(args.screenshot)), { recursive: true });
   const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, fromSurface: true });
@@ -128,10 +147,12 @@ try {
     browserPath: browser, browserVersion: version.Browser, chromiumProtocol: version['Protocol-Version'],
     navigation: args.url, viewport: { width: 1600, height: 1100 }, result, interactions: interactionResult,
     consoleErrors, runtimeErrors: errors, externalRequests,
+    gpuMeasurement,
+    contextRecovery,
     screenshot: args.screenshot,
     expectedMode: expectFallback ? 'WEBGL2_DISABLED_2D_FALLBACK' : 'WEBGL2_SCENE',
     status: functionalPass && errors.length === 0 && externalRequests.length === 0 ? 'PASS' : 'FAIL',
-    note: 'Disposable staging Registry and credential. Headless Chromium renderer is not a measurement of the production RTX 3060 Ti.'
+    note: physicalGpu ? 'Disposable staging Registry and credential. Interactive GPU result applies only to the detected local adapter; browser GPU memory is not exposed by this harness.' : 'Disposable staging Registry and credential. Headless Chromium renderer is software rendering and is not physical GPU performance evidence.'
   };
   await writeFile(resolve(args.report), JSON.stringify(report, null, 2) + '\n', 'utf8');
   if (report.status !== 'PASS') throw new Error(`Browser E2E did not pass: ${JSON.stringify({ ...report, result: { ...result, worldLabel: undefined } })}`);

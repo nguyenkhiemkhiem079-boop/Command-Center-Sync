@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 import os
 from pathlib import Path
 import secrets
@@ -19,6 +20,10 @@ from registry import hash_token
 
 OUT = ROOT / "docs" / "agent-world-3d"
 CHROME = Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+PARSER = argparse.ArgumentParser(description=__doc__)
+PARSER.add_argument("--physical-gpu", action="store_true", help="run an additional visible Chrome staging soak using the local hardware renderer")
+PARSER.add_argument("--soak-ms", type=int, default=60000, help="visible GPU measurement duration (10-180 seconds)")
+ARGS = PARSER.parse_args()
 
 
 def free_port() -> int:
@@ -90,7 +95,25 @@ def main() -> int:
                 if result["status"] != "PASS":
                     raise RuntimeError(f"Browser {mode} report did not pass")
                 results.append(result)
-            print(json.dumps({"status": "PASS", "port": port, "browser": results[0]["browserVersion"], "renderer": results[0]["result"]["renderer"], "webgl": str(screenshot.relative_to(ROOT)), "fallback": str(fallback_screenshot.relative_to(ROOT))}))
+            if ARGS.physical_gpu:
+                soak_ms = max(10000, min(ARGS.soak_ms, 180000))
+                image = OUT / "AGENT_WORLD_SCREENSHOTS" / "agent-world-chrome-hardware-gpu.png"
+                report = OUT / "AGENT_WORLD_SCREENSHOTS" / "browser-hardware-gpu-e2e.json"
+                mode_command = [
+                    node, str(ROOT / "tests" / "browser_agent_world.mjs"),
+                    f"--url=http://127.0.0.1:{port}/ui", f"--tokenFile={token_file}",
+                    f"--screenshot={image}", f"--report={report}", f"--browser={CHROME}",
+                    "--physicalGpu=true", f"--soakMs={soak_ms}",
+                ]
+                completed = subprocess.run(mode_command, cwd=ROOT, capture_output=True, text=True, timeout=soak_ms / 1000 + 90)
+                (OUT / "AGENT_WORLD_SCREENSHOTS" / "browser-hardware-gpu.stdout.txt").write_text(completed.stdout.strip() + "\n", encoding="utf-8")
+                if completed.returncode:
+                    raise RuntimeError(f"Physical GPU browser harness failed ({completed.returncode}): {completed.stderr[-3000:]}")
+                hardware = json.loads(report.read_text(encoding="utf-8"))
+                if hardware["status"] != "PASS":
+                    raise RuntimeError("Physical GPU browser report did not pass")
+                results.append(hardware)
+            print(json.dumps({"status": "PASS", "port": port, "browser": results[0]["browserVersion"], "renderer": results[0]["result"]["renderer"], "webgl": str(screenshot.relative_to(ROOT)), "fallback": str(fallback_screenshot.relative_to(ROOT)), "hardwareGpu": results[-1].get("gpuMeasurement") if ARGS.physical_gpu else None, "gpuScreenshot": str((OUT / "AGENT_WORLD_SCREENSHOTS" / "agent-world-chrome-hardware-gpu.png").relative_to(ROOT)) if ARGS.physical_gpu else None}))
             return 0
         finally:
             server.terminate()

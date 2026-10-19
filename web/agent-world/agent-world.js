@@ -12050,76 +12050,139 @@ var Gl = "UNKNOWN", Q = (e, t = Gl) => {
 	if (typeof e != "string") return t;
 	let n = e.trim();
 	return n && n.length <= 240 && !/[\u0000-\u001f]/.test(n) ? n : t;
-}, Kl = (e) => Array.isArray(e) ? e.filter((e) => e && typeof e == "object" && !Array.isArray(e)) : [], ql = (e) => {
-	let t = Q(e).toUpperCase();
+}, Kl = (e) => Array.isArray(e) ? e.filter((e) => e && typeof e == "object" && !Array.isArray(e)) : [], ql = (e) => Q(e).toUpperCase();
+function Jl(e) {
+	let t = ql(e);
 	return t === "FROZEN" || t === "BLOCKED" ? "BLOCKED" : [
 		"SUBMITTED",
 		"SELF_QA_READY",
 		"QA_PENDING"
-	].includes(t) ? "AWAITING_QA" : ["CHANGES_REQUESTED", "REWORK_REQUIRED"].includes(t) ? "FEEDBACK_REQUESTED" : [
-		"ACCEPTED",
-		"CODE_REVIEWED",
-		"PASS_CODE_REVIEW"
-	].includes(t) ? "ACCEPTED" : ["RUNNING", "IN_PROGRESS"].includes(t) ? "IN_PROGRESS" : ["ACKNOWLEDGED", "ACK"].includes(t) ? "ACKNOWLEDGED" : t === "QUEUED" || t === "ASSIGNED" ? "ASSIGNED" : "UNKNOWN";
-};
-function Jl({ cockpit: e, snapshot: t, studio: n, cockpitError: r = null, observedAt: i = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-	let a = !(!e || typeof e != "object" || Array.isArray(e)), o = Kl(t?.tasks), s = Kl(n?.assignments), c = /* @__PURE__ */ new Map();
-	for (let t of [...s, ...Kl(e?.assignments)]) {
+	].includes(t) ? "AWAITING_QA" : ["SYNC_REQUEST", "WAITING_FOR_CODEX_REVIEW"].includes(t) ? "AWAITING_CODEX_REVIEW" : ["CHANGES_REQUESTED", "REWORK_REQUIRED"].includes(t) ? "FEEDBACK_REQUESTED" : ["CODE_REVIEWED", "PASS_CODE_REVIEW"].includes(t) ? "REVIEW_PASSED" : [
+		"PREPARE",
+		"PREPARED",
+		"VALIDATE",
+		"VALIDATED",
+		"INTEGRATION_PENDING"
+	].includes(t) ? "INTEGRATION_PENDING" : ["INTEGRATION_QA", "INTEGRATION_QA_IN_PROGRESS"].includes(t) ? "INTEGRATION_QA" : ["APPROVAL_PENDING", "CHILDREN_ACCEPTED_APPROVAL_PENDING"].includes(t) ? "APPROVAL_PENDING" : [
+		"INTEGRATED",
+		"COMMITTED",
+		"COMPLETE"
+	].includes(t) ? "INTEGRATED" : t === "ACCEPTED" ? "ACCEPTED" : [
+		"RUNNING",
+		"IN_PROGRESS",
+		"DEVELOPMENT",
+		"SELF_QA"
+	].includes(t) ? "IN_PROGRESS" : [
+		"ACKNOWLEDGED",
+		"ACK",
+		"TASK_ACKNOWLEDGED"
+	].includes(t) ? "ACKNOWLEDGED" : [
+		"QUEUED",
+		"ASSIGNED",
+		"TASK_ASSIGNED"
+	].includes(t) ? "ASSIGNED" : Gl;
+}
+function Yl(e) {
+	let t = ql(e), n = Jl(e);
+	return {
+		state: n,
+		reviewState: n === "REVIEW_PASSED" ? "PASSED" : Gl,
+		integrationState: n === "REVIEW_PASSED" ? "INTEGRATION_PENDING" : n === "INTEGRATION_PENDING" ? "PENDING" : n === "INTEGRATION_QA" ? "IN_PROGRESS" : n === "APPROVAL_PENDING" ? "QA_PASSED" : n === "INTEGRATED" ? "COMPLETE" : Gl,
+		approvalState: n === "APPROVAL_PENDING" ? "PENDING" : Gl,
+		acceptanceState: ["ACCEPTED", "INTEGRATED"].includes(n) ? "ACCEPTED" : "NOT_ACCEPTED",
+		sourceState: t
+	};
+}
+function Xl(e, t) {
+	if (typeof e != "string" || !e.trim()) return {
+		state: "UNKNOWN",
+		ageMs: null
+	};
+	let n = Date.parse(e);
+	if (!Number.isFinite(n)) return {
+		state: "UNKNOWN",
+		ageMs: null
+	};
+	let r = t - n;
+	return r < -6e4 || r > 3e5 ? {
+		state: "STALE",
+		ageMs: r
+	} : {
+		state: "FRESH",
+		ageMs: Math.max(0, r)
+	};
+}
+function Zl(e, t) {
+	let n = Yl(e);
+	return !t || n.state === "BLOCKED" && n.sourceState === "FROZEN" ? n : {
+		state: Gl,
+		reviewState: Gl,
+		integrationState: Gl,
+		approvalState: Gl,
+		acceptanceState: "UNKNOWN",
+		sourceState: n.sourceState
+	};
+}
+function Ql({ cockpit: e, snapshot: t, studio: n, cockpitError: r = null, observedAt: i = null, now: a = Date.now() } = {}) {
+	let o = !(!e || typeof e != "object" || Array.isArray(e)), s = Q(e?.last_verified_at ?? i), c = Xl(s, a), l = c.state === "STALE", u = Kl(t?.tasks), d = Kl(n?.assignments), f = /* @__PURE__ */ new Map();
+	for (let t of [...d, ...Kl(e?.assignments)]) {
 		let e = Q(t.id);
-		e !== Gl && c.set(e, {
-			...c.get(e) || {},
+		e !== Gl && f.set(e, {
+			...f.get(e) || {},
 			...t
 		});
 	}
-	let l = [...c.values()], u = new Map(l.map((e) => [Q(e.id), e])), d = o.map((e) => {
-		let t = Q(e.id), n = u.get(t);
+	let p = [...f.values()], m = new Map(p.map((e) => [Q(e.id), e])), h = u.map((e) => {
+		let t = Q(e.id), n = m.get(t), r = n?.state ?? e.state, i = Xl(n?.last_verified_at ?? e.last_verified_at ?? s, a), o = l || i.state === "STALE", u = Zl(r, o);
 		return {
 			id: t,
 			title: Q(e.title, t),
 			owner: Q(e.owner),
-			state: ql(n?.state ?? e.state),
-			rawState: Q(n?.state ?? e.state),
+			...u,
 			wave: Q(e.wave_id ?? e.wave ?? n?.wave),
 			mission: Q(n?.mission ?? e.mission_id),
 			scope: Q(n?.scope ?? e.scope),
 			baseSha: Q(n?.base_sha ?? e.base_sha),
 			checkpoint: !!(n?.checkpoint_id || e.checkpoint || e.checkpoint_at),
 			evidence: n?.source || e.source || "REGISTRY_RECORD",
-			lastObservedAt: Q(n?.last_verified_at ?? e.updated, i)
+			freshness: o ? "STALE" : c.state === "FRESH" || i.state === "FRESH" ? "FRESH" : "UNKNOWN",
+			lastObservedAt: Q(n?.last_verified_at ?? e.last_verified_at ?? s)
 		};
 	});
-	for (let e of l) {
+	for (let e of p) {
 		let t = Q(e.id);
-		d.some((e) => e.id === t) || d.push({
+		if (h.some((e) => e.id === t)) continue;
+		let n = e.state, r = Xl(e.last_verified_at ?? s, a), i = l || r.state === "STALE";
+		h.push({
 			id: t,
 			title: Q(e.title, t),
 			owner: Q(e.owner),
-			state: ql(e.state),
-			rawState: Q(e.state),
+			...Zl(n, i),
 			wave: Q(e.wave),
 			mission: Q(e.mission),
 			scope: Q(e.scope ?? e.allowed),
 			baseSha: Q(e.base_sha),
 			checkpoint: !!e.checkpoint_id,
 			evidence: Q(e.source, "CONTROLLER_RECORD"),
-			lastObservedAt: Q(e.last_verified_at, i)
+			freshness: i ? "STALE" : c.state === "FRESH" || r.state === "FRESH" ? "FRESH" : "UNKNOWN",
+			lastObservedAt: Q(e.last_verified_at ?? s)
 		});
 	}
-	let f = Kl(e?.identity_layers), p = [
+	let g = Kl(e?.identity_layers), _ = [
 		"CODEX",
 		"ANTI-01",
 		"ANTI-02"
-	], m = p.map((e) => {
-		let t = f.find((t) => Q(t.id) === e), n = d.filter((t) => t.owner === e), r = t?.runtime && typeof t.runtime == "object" ? t.runtime : {}, i = Q(r.teamwork), a = Q(r.verification ?? r.evidence_class), o = i === "TEAMWORK_ACTIVE" && a === "VERIFIED";
+	], v = _.map((e) => {
+		let t = g.find((t) => Q(t.id) === e), n = h.filter((t) => t.owner === e), r = t?.runtime && typeof t.runtime == "object" ? t.runtime : {}, i = Q(r.teamwork), a = Q(r.verification ?? r.evidence_class), o = !l && i === "TEAMWORK_ACTIVE" && a === "VERIFIED";
 		return {
 			id: e,
 			role: e === "CODEX" ? "SUPERVISOR" : "DEVELOPMENT TEAM",
-			mcp: Q(t?.mcp?.contact),
-			runtime: o ? "TEAMWORK_ACTIVE" : Q(r.session),
+			mcp: l ? Gl : Q(t?.mcp?.contact),
+			runtime: l ? Gl : o ? "TEAMWORK_ACTIVE" : Q(r.session),
 			teamwork: o ? "TEAMWORK_ACTIVE" : Gl,
-			evidenceClass: o ? "VERIFIED" : a === "AGENT_REPORTED" ? "AGENT_REPORTED" : "UNKNOWN",
+			evidenceClass: o ? "VERIFIED" : !l && a === "AGENT_REPORTED" ? "AGENT_REPORTED" : "UNKNOWN",
 			source: Q(t?.source ?? t?.runtime?.source, t ? "NO_RUNTIME_ATTESTATION" : "ROLE_CONFIGURED_RUNTIME_UNKNOWN"),
-			lastObservedAt: Q(t?.runtime?.last_verified_at ?? t?.last_verified_at),
+			lastObservedAt: Q(t?.runtime?.last_verified_at ?? t?.last_verified_at ?? s),
 			tasks: n,
 			ownership: n.map((e) => ({
 				task: e.id,
@@ -12127,7 +12190,7 @@ function Jl({ cockpit: e, snapshot: t, studio: n, cockpitError: r = null, observ
 				state: e.state
 			}))
 		};
-	}), h = Kl(e?.fleet?.nodes).filter((e) => e.kind === "SUBAGENT").map((e) => ({
+	}), y = Kl(e?.fleet?.nodes).filter((e) => e.kind === "SUBAGENT").map((e) => ({
 		id: Q(e.id),
 		parent: Q(e.owner),
 		assignment: Q(e.parent),
@@ -12137,17 +12200,17 @@ function Jl({ cockpit: e, snapshot: t, studio: n, cockpitError: r = null, observ
 		teamwork: Gl,
 		evidenceClass: "UNKNOWN",
 		source: Q(e.source, "CONTROLLER_METADATA_PROJECTION"),
-		lastObservedAt: Q(e.last_verified_at),
-		tasks: d.filter((t) => t.owner === Q(e.id)),
+		lastObservedAt: Q(e.last_verified_at ?? s),
+		tasks: h.filter((t) => t.owner === Q(e.id)),
 		ownership: [{
 			task: Q(e.parent),
 			scope: "INHERITED_FROM_PARENT",
-			state: Q(e.state)
+			state: l ? Gl : Q(e.state)
 		}]
-	})).filter((e) => e.id !== Gl && !p.includes(e.id));
-	m.push(...h);
-	let g = Kl(e?.timeline).map((t, n) => {
-		let r = Q(t.target), i = d.find((e) => e.id === r);
+	})).filter((e) => e.id !== Gl && !_.includes(e.id));
+	v.push(...y);
+	let b = Kl(e?.timeline).map((t, n) => {
+		let r = Q(t.target), i = h.find((e) => e.id === r);
 		return {
 			id: Q(t.id, `event-${n}`),
 			at: Q(t.at),
@@ -12159,38 +12222,40 @@ function Jl({ cockpit: e, snapshot: t, studio: n, cockpitError: r = null, observ
 			summary: Q(t.summary, "Controller event recorded; payload omitted"),
 			source: Q(t.source, e?.source || "CONTROLLER_METADATA_PROJECTION")
 		};
-	}), _ = [...Kl(t?.locks).map((e) => ({
+	}), x = [...Kl(t?.locks).map((e) => ({
 		task: Q(e.task_id),
 		owner: Q(e.owner),
 		scope: Q(e.scope),
-		state: Q(e.state),
+		state: l && e.state !== "FROZEN" ? Gl : Q(e.state),
 		epoch: Number.isInteger(e.fencing) ? e.fencing : null,
-		source: "LEGACY_REGISTRY_RECORD"
+		source: "LEGACY_REGISTRY_RECORD",
+		freshness: l ? "STALE" : c.state
 	})), ...Kl(t?.controller_summary?.worksharing_locks).map((e) => ({
 		task: Q(e.assignment),
 		owner: Q(e.owner),
 		scope: Q(e.scope),
-		state: Q(e.state),
+		state: l && e.state !== "FROZEN" ? Gl : Q(e.state),
 		epoch: Number.isInteger(e.epoch) ? e.epoch : null,
-		source: Q(e.source, "CONTROLLER_SQLITE")
+		source: Q(e.source, "CONTROLLER_SQLITE"),
+		freshness: l ? "STALE" : c.state
 	}))];
 	return {
-		available: a,
-		source: Q(e?.source, a ? "CONTROLLER_METADATA_PROJECTION" : "LEGACY_REGISTRY_FALLBACK"),
-		observedAt: Q(e?.last_verified_at, i),
-		mode: Q(e?.supervisor_mode),
-		error: a ? null : Q(r, "Cockpit observation unavailable"),
+		available: o,
+		source: Q(e?.source, o ? "CONTROLLER_METADATA_PROJECTION" : "LEGACY_REGISTRY_FALLBACK"),
+		observedAt: s,
+		observationState: c.state,
+		error: o ? null : Q(r, "Cockpit observation unavailable"),
 		mission: Kl(n?.missions)[0] ? Q(n.missions[0].id) : Gl,
-		missions: [.../* @__PURE__ */ new Set([...Kl(n?.missions).map((e) => Q(e.id)), ...d.map((e) => e.mission).filter((e) => e !== Gl)])].filter((e) => e !== Gl),
-		waves: [...new Set(d.map((e) => e.wave).filter((e) => e !== Gl))],
-		agents: m,
-		tasks: d,
-		events: g,
+		missions: [.../* @__PURE__ */ new Set([...Kl(n?.missions).map((e) => Q(e.id)), ...h.map((e) => e.mission).filter((e) => e !== Gl)])].filter((e) => e !== Gl),
+		waves: [...new Set(h.map((e) => e.wave).filter((e) => e !== Gl))],
+		agents: v,
+		tasks: h,
+		events: b,
 		approvals: Kl(e?.approvals),
-		locks: _,
-		controllerAssignments: l,
-		subagents: h,
-		provenance: a ? "CONTROLLER_METADATA; DOES NOT PROVE PROVIDER SESSION OR CODE EXECUTION" : "LEGACY_REGISTRY_ONLY; RUNTIME UNKNOWN"
+		locks: x,
+		controllerAssignments: p,
+		subagents: y,
+		provenance: o ? "CONTROLLER_METADATA; DOES NOT PROVE PROVIDER SESSION OR CODE EXECUTION" : "LEGACY_REGISTRY_ONLY; RUNTIME UNKNOWN"
 	};
 }
 //#endregion
@@ -12208,16 +12273,22 @@ var $ = {
 	green: 6740908,
 	white: 14215418,
 	muted: 8427444
-}, Yl = {
+}, $l = {
 	ASSIGNED: $.blue,
 	ACKNOWLEDGED: $.cyan,
 	IN_PROGRESS: $.green,
 	AWAITING_QA: $.amber,
 	FEEDBACK_REQUESTED: $.violet,
+	AWAITING_CODEX_REVIEW: $.amber,
+	REVIEW_PASSED: $.cyan,
+	INTEGRATION_PENDING: $.blue,
+	INTEGRATION_QA: $.amber,
+	APPROVAL_PENDING: $.violet,
+	INTEGRATED: $.green,
 	BLOCKED: $.red,
 	ACCEPTED: $.green,
 	UNKNOWN: $.muted
-}, Xl = {
+}, eu = {
 	overview: {
 		position: [
 			15,
@@ -12296,13 +12367,13 @@ var $ = {
 		],
 		label: "Independent QA lab"
 	}
-}, Zl = (e, t = {}) => new Gi({
+}, tu = (e, t = {}) => new Gi({
 	color: e,
 	roughness: .78,
 	metalness: .08,
 	...t
 });
-function Ql(e, t = "") {
+function nu(e, t = "") {
 	let n = document.createElement("canvas");
 	n.width = 512, n.height = 128;
 	let r = n.getContext("2d");
@@ -12310,21 +12381,21 @@ function Ql(e, t = "") {
 	let i = new yi(n);
 	return i.colorSpace = Le, i;
 }
-function $l(e, t, n, r = 4.1) {
+function ru(e, t, n, r = 4.1) {
 	let i = new zr({
-		map: Ql(e, t),
+		map: nu(e, t),
 		transparent: !0,
 		side: 2,
 		depthWrite: !1
 	}), a = new Zr(new Mi(r, r / 4), i);
 	return a.position.set(...n), a.rotation.x = -Math.PI / 2, a.userData.disposeTexture = !0, a;
 }
-function eu(e, t, n, r, i = {}) {
+function iu(e, t, n, r, i = {}) {
 	let a = new Zr(new Ci(...t), r);
 	return a.position.set(...n), a.castShadow = !1, a.receiveShadow = !1, i.name && (a.name = i.name), i.detail && (a.userData.detail = i.detail), e.add(a), a;
 }
-function tu(e) {
-	let t = new wn(), n = e.id === "CODEX", r = n ? $.violet : e.id === "ANTI-01" ? $.cyan : $.blue, i = Zl(r), a = Zl(1517630), o = Zl(14084340, { roughness: .48 }), s = new Zr(new wi(.31, .42, .8, 6), i);
+function au(e) {
+	let t = new wn(), n = e.id === "CODEX", r = n ? $.violet : e.id === "ANTI-01" ? $.cyan : $.blue, i = tu(r), a = tu(1517630), o = tu(14084340, { roughness: .48 }), s = new Zr(new wi(.31, .42, .8, 6), i);
 	s.position.y = .72, s.castShadow = !1, t.add(s);
 	let c = new Zr(new ji(.34, 0), o);
 	c.position.y = 1.36, t.add(c);
@@ -12335,21 +12406,21 @@ function tu(e) {
 		let n = new Zr(new Ni(.035, 6, 5), u);
 		n.position.set(e, 1.38, .475), t.add(n);
 	}
-	let d = new Zr(new Pi(.5, .035, 5, 16), Zl(r, {
+	let d = new Zr(new Pi(.5, .035, 5, 16), tu(r, {
 		emissive: r,
 		emissiveIntensity: .28
 	}));
 	return d.rotation.x = Math.PI / 2, d.position.y = .08, t.add(d), t.userData.agentId = e.id, t.userData.isCodex = n, t;
 }
-function nu(e, t, n, r, i, a) {
+function ou(e, t, n, r, i, a) {
 	let o = new wn();
 	o.position.set(t, 0, n), o.userData.agentId = i, o.userData.workstation = a;
-	let s = Zl(2440021), c = Zl(5335940), l = Zl(1587538, {
+	let s = tu(2440021), c = tu(5335940), l = tu(1587538, {
 		emissive: r,
 		emissiveIntensity: .12,
 		roughness: .4
 	});
-	eu(o, [
+	iu(o, [
 		2.6,
 		.16,
 		1.2
@@ -12358,7 +12429,7 @@ function nu(e, t, n, r, i, a) {
 		1.08,
 		0
 	], s);
-	for (let e of [-1.08, 1.08]) for (let t of [-.42, .42]) eu(o, [
+	for (let e of [-1.08, 1.08]) for (let t of [-.42, .42]) iu(o, [
 		.1,
 		1,
 		.1
@@ -12367,7 +12438,7 @@ function nu(e, t, n, r, i, a) {
 		.5,
 		t
 	], c);
-	eu(o, [
+	iu(o, [
 		1.2,
 		.78,
 		.12
@@ -12376,7 +12447,7 @@ function nu(e, t, n, r, i, a) {
 		1.65,
 		-.36
 	], c);
-	let u = eu(o, [
+	let u = iu(o, [
 		1.12,
 		.68,
 		.08
@@ -12385,7 +12456,7 @@ function nu(e, t, n, r, i, a) {
 		1.67,
 		-.275
 	], l, { name: `screen-${i}-${a}` });
-	u.userData.glowMaterial = l, eu(o, [
+	u.userData.glowMaterial = l, iu(o, [
 		.48,
 		.05,
 		.3
@@ -12393,10 +12464,10 @@ function nu(e, t, n, r, i, a) {
 		0,
 		1.18,
 		.3
-	], Zl(5400962));
-	let d = new Zr(new wi(.42, .36, .12, 8), Zl(2505813));
+	], tu(5400962));
+	let d = new Zr(new wi(.42, .36, .12, 8), tu(2505813));
 	d.position.set(0, .56, 1.08), o.add(d);
-	let f = eu(o, [
+	let f = iu(o, [
 		.68,
 		.86,
 		.12
@@ -12404,18 +12475,18 @@ function nu(e, t, n, r, i, a) {
 		0,
 		.94,
 		1.4
-	], Zl(2505813));
+	], tu(2505813));
 	return f.rotation.x = -.12, e.add(o), {
 		group: o,
 		display: u,
 		screen: l
 	};
 }
-function ru(e, t, n) {
+function su(e, t, n) {
 	let r = {
-		floor: Zl($.floor),
-		tile: Zl($.tile),
-		wall: Zl(1716813),
+		floor: tu($.floor),
+		tile: tu($.tile),
+		wall: tu(1716813),
 		glass: new Ki({
 			color: 6071295,
 			transparent: !0,
@@ -12424,16 +12495,16 @@ function ru(e, t, n) {
 			metalness: .12,
 			depthWrite: !1
 		}),
-		cyan: Zl($.cyan, {
+		cyan: tu($.cyan, {
 			emissive: $.cyan,
 			emissiveIntensity: .25
 		}),
-		blue: Zl($.blue, {
+		blue: tu($.blue, {
 			emissive: $.blue,
 			emissiveIntensity: .2
 		})
 	};
-	eu(e, [
+	iu(e, [
 		26,
 		.32,
 		20
@@ -12507,7 +12578,7 @@ function ru(e, t, n) {
 		}
 	], o = [];
 	for (let t of a) {
-		let n = eu(e, [
+		let n = iu(e, [
 			t.w,
 			.14,
 			t.h
@@ -12530,7 +12601,7 @@ function ru(e, t, n) {
 			transparent: !0,
 			opacity: .6
 		}));
-		i.position.copy(n.position), e.add(i), e.add($l(t.title, t.subtitle, [
+		i.position.copy(n.position), e.add(i), e.add(ru(t.title, t.subtitle, [
 			t.x,
 			.12,
 			t.z - t.h / 2 + .5
@@ -12556,7 +12627,7 @@ function ru(e, t, n) {
 			.1
 		]
 	]) {
-		let o = eu(e, [
+		let o = iu(e, [
 			i,
 			1.7,
 			a
@@ -12588,12 +12659,12 @@ function ru(e, t, n) {
 		}
 	];
 	for (let r of s) {
-		let i = t.agents.find((e) => e.id === r.agent), a = nu(e, r.x, r.z, r.agent === "CODEX" ? $.violet : r.agent === "ANTI-01" ? $.cyan : $.blue, r.agent, r.station), s = tu(i || { id: r.agent }), c = i?.teamwork === "TEAMWORK_ACTIVE" && i?.evidenceClass === "VERIFIED";
+		let i = t.agents.find((e) => e.id === r.agent), a = ou(e, r.x, r.z, r.agent === "CODEX" ? $.violet : r.agent === "ANTI-01" ? $.cyan : $.blue, r.agent, r.station), s = au(i || { id: r.agent }), c = i?.teamwork === "TEAMWORK_ACTIVE" && i?.evidenceClass === "VERIFIED";
 		s.position.set(r.x + (c ? 0 : -1.55), 0, r.z + 2), s.userData.detail = {
 			kind: "agent",
 			id: r.agent
 		}, e.add(s);
-		let l = $l(r.agent, `${i?.teamwork || "UNKNOWN"} · ${i?.evidenceClass || "UNKNOWN"}`, [
+		let l = ru(r.agent, `${i?.teamwork || "UNKNOWN"} · ${i?.evidenceClass || "UNKNOWN"}`, [
 			r.x + (c ? 0 : -1.55),
 			1.95,
 			r.z + 2
@@ -12610,8 +12681,8 @@ function ru(e, t, n) {
 			"Self-QA",
 			"Git checkpoint"
 		].forEach((t, n) => {
-			let i = r.x - 2.35 + n * 1.55, a = Zl(1715267);
-			eu(e, [
+			let i = r.x - 2.35 + n * 1.55, a = tu(1715267);
+			iu(e, [
 				1.15,
 				.72,
 				.72
@@ -12619,7 +12690,7 @@ function ru(e, t, n) {
 				i,
 				.34,
 				-2.15
-			], a), eu(e, [
+			], a), iu(e, [
 				.95,
 				.46,
 				.045
@@ -12627,10 +12698,10 @@ function ru(e, t, n) {
 				i,
 				.39,
 				-1.7599999999999998
-			], Zl(2112854, {
+			], tu(2112854, {
 				emissive: $.muted,
 				emissiveIntensity: .08
-			})), e.add($l(t.toUpperCase(), "NO EVENT RECORDED", [
+			})), e.add(ru(t.toUpperCase(), "NO EVENT RECORDED", [
 				i,
 				.92,
 				-2.19
@@ -12644,7 +12715,7 @@ function ru(e, t, n) {
 			z: -7
 		}, a = t || "UNKNOWN_PARENT", l = c.get(a) || 0;
 		c.set(a, l + 1);
-		let u = i.x + (l % 2 == 0 ? 1.6 : -1.6), d = i.z - 2.2 - Math.floor(l / 2) * 1.4, f = tu({
+		let u = i.x + (l % 2 == 0 ? 1.6 : -1.6), d = i.z - 2.2 - Math.floor(l / 2) * 1.4, f = au({
 			id: r.id,
 			role: "SUBAGENT"
 		});
@@ -12656,7 +12727,7 @@ function ru(e, t, n) {
 			desk: null,
 			active: !1,
 			agent: r
-		}), o.push(f), e.add($l(r.id, `${t || "PARENT UNKNOWN"} · ${r.state || "UNKNOWN"}`, [
+		}), o.push(f), e.add(ru(r.id, `${t || "PARENT UNKNOWN"} · ${r.state || "UNKNOWN"}`, [
 			u,
 			1.9,
 			d
@@ -12697,7 +12768,7 @@ function ru(e, t, n) {
 			}
 		]
 	]) {
-		let s = Zl(1781318), c = eu(e, [
+		let s = tu(1781318), c = iu(e, [
 			3,
 			.68,
 			.24
@@ -12705,7 +12776,7 @@ function ru(e, t, n) {
 			t,
 			.52,
 			n
-		], s, { detail: a }), l = eu(e, [
+		], s, { detail: a }), l = iu(e, [
 			2.76,
 			.48,
 			.035
@@ -12713,40 +12784,40 @@ function ru(e, t, n) {
 			t,
 			.55,
 			n + .14
-		], Zl(i, {
+		], tu(i, {
 			emissive: i,
 			emissiveIntensity: .22
 		}));
 		l.userData.displayLabel = r, o.push(c, l);
 	}
-	let l = new Zr(new wi(.5, .65, .12, 8), Zl(2177880));
+	let l = new Zr(new wi(.5, .65, .12, 8), tu(2177880));
 	return l.position.set(0, -.1, -2.4), e.add(l), {
 		interactive: o,
 		zones: a,
 		materials: r
 	};
 }
-function iu(e, t) {
+function cu(e, t) {
 	if (e) {
 		let t = e.tasks.length ? e.tasks.map((e) => `${e.id} · ${e.state} · ${e.scope}`).join("\n") : "No assignment recorded", n = e.role === "SUBAGENT" ? `\nParent team: ${e.parent}\nParent assignment: ${e.assignment}\n` : "";
 		return `${e.id} · ${e.role}\nMCP: ${e.mcp}\nAntigravity runtime: ${e.runtime}\nTeamwork: ${e.teamwork}\nEvidence: ${e.evidenceClass}${n}\nGit branch/worktree: UNKNOWN unless explicitly recorded\nSource: ${e.source}\nObserved: ${e.lastObservedAt}\nAssignments:\n${t}`;
 	}
-	return t ? `${t.id} · ${t.title}\nOwner: ${t.owner}\nState: ${t.state} (controller/Registry record)\nScope: ${t.scope}\nWave: ${t.wave}\nMission: ${t.mission}\nCheckpoint recorded: ${t.checkpoint ? "YES — controller metadata" : "NO"}\nEvidence class: ${t.evidence}` : "Select an agent, workstation, task path or office zone to inspect controller-recorded metadata.";
+	return t ? `${t.id} · ${t.title}\nOwner: ${t.owner}\nState: ${t.state} (controller/Registry record)\nReview: ${t.reviewState}\nIntegration: ${t.integrationState}\nApproval: ${t.approvalState}\nAcceptance: ${t.acceptanceState}\nObservation: ${t.freshness} · ${t.lastObservedAt}\nScope: ${t.scope}\nWave: ${t.wave}\nMission: ${t.mission}\nCheckpoint recorded: ${t.checkpoint ? "YES — controller metadata" : "NO"}\nEvidence class: ${t.evidence}` : "Select an agent, workstation, task path or office zone to inspect controller-recorded metadata.";
 }
-function au(e) {
-	let t = e?.mission || "UNKNOWN", n = (e?.missions || []).map((e) => `<option value="${ou(e)}">${ou(e)}</option>`).join("");
+function lu(e) {
+	let t = e?.mission || "UNKNOWN", n = (e?.missions || []).map((e) => `<option value="${uu(e)}">${uu(e)}</option>`).join("");
 	return `<section id="agent-world-root" class="aw-shell" aria-label="Agent World 3D operational view">
-    <div class="aw-topline"><div><b>AGENT WORLD</b><span>Controller data · ${ou(e?.source || "UNKNOWN")} · ${ou(e?.observedAt || "UNKNOWN")}</span></div><label>Mission <select id="aw-mission" aria-label="Filter mission"><option value="all">All recorded missions</option>${n || `<option value="${ou(t)}">${ou(t)}</option>`}</select></label></div>
+    <div class="aw-topline"><div><b>AGENT WORLD</b><span>Controller data · ${uu(e?.source || "UNKNOWN")} · ${uu(e?.observedAt || "UNKNOWN")}</span></div><label>Mission <select id="aw-mission" aria-label="Filter mission"><option value="all">All recorded missions</option>${n || `<option value="${uu(t)}">${uu(t)}</option>`}</select></label></div>
     <div class="aw-viewtabs" role="tablist" aria-label="Agent World view"><button type="button" data-aw-view="world" role="tab" aria-selected="true">3D World</button><button type="button" data-aw-view="fleet" role="tab" aria-selected="false">2D Fleet</button><button type="button" data-aw-view="timeline" role="tab" aria-selected="false">Event Timeline</button><span class="aw-source-pill">VERIFIED activity only · runtime defaults UNKNOWN</span></div>
     <div class="aw-layout"><div class="aw-stage">
       <div id="aw-world-pane" class="aw-world-pane"><canvas id="aw-canvas" tabindex="0" aria-label="Interactive low-poly agent office; see adjacent text for agent states"></canvas><div id="aw-fallback" class="aw-fallback" hidden role="status"></div><div class="aw-hud"><span>AGENT WORLD · LIVE REGISTRY PROJECTION</span><span id="aw-status">Reading controller metadata…</span></div></div>
       <div id="aw-fleet-pane" class="aw-list-pane" hidden></div>
       <div id="aw-timeline-pane" class="aw-list-pane" hidden><div class="aw-filters"><label>Agent <select id="aw-agent-filter"><option value="all">All</option><option>CODEX</option><option>ANTI-01</option><option>ANTI-02</option></select></label><label>Type <select id="aw-type-filter"><option value="all">All recorded events</option></select></label><label>Wave <select id="aw-wave-filter"><option value="all">All recorded waves</option></select></label><label>Since <input type="datetime-local" id="aw-time-filter"></label><span>Historical records are labeled REPLAY; no events are invented.</span></div><div id="aw-timeline-list"></div></div>
-      <div class="aw-camera" aria-label="Camera presets">${Object.entries(Xl).map(([e, t]) => `<button type="button" data-camera="${e}" title="${t.label}">${ou(t.label)}</button>`).join("")}<button type="button" data-camera="overview">Reset</button></div>
-    </div><aside class="aw-inspector" aria-live="polite"><div class="aw-inspector-head"><div class="aw-eyebrow">LIVE CONTROLLER OBSERVATION</div><h2 id="aw-selected-title">Agent overview</h2><span id="aw-evidence-class" class="aw-evidence">UNKNOWN</span></div><pre id="aw-detail">${ou(iu(null, null))}</pre><div class="aw-summary" id="aw-summary"></div><div class="aw-legend"><b>State legend</b><span><i class="dot assigned"></i> Assigned</span><span><i class="dot active"></i> Controller says in progress</span><span><i class="dot blocked"></i> Frozen / blocked</span><span><i class="dot unknown"></i> Runtime unknown</span></div><p class="aw-disclaimer">MCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.</p></aside></div>
+      <div class="aw-camera" aria-label="Camera presets">${Object.entries(eu).map(([e, t]) => `<button type="button" data-camera="${e}" title="${t.label}">${uu(t.label)}</button>`).join("")}<button type="button" data-camera="overview">Reset</button></div>
+    </div><aside class="aw-inspector" aria-live="polite"><div class="aw-inspector-head"><div class="aw-eyebrow">LIVE CONTROLLER OBSERVATION</div><h2 id="aw-selected-title">Agent overview</h2><span id="aw-evidence-class" class="aw-evidence">UNKNOWN</span></div><pre id="aw-detail">${uu(cu(null, null))}</pre><div class="aw-summary" id="aw-summary"></div><div class="aw-legend"><b>State legend</b><span><i class="dot assigned"></i> Assigned</span><span><i class="dot active"></i> Controller says in progress</span><span><i class="dot blocked"></i> Frozen / blocked</span><span><i class="dot unknown"></i> Runtime unknown</span></div><p class="aw-disclaimer">MCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.</p></aside></div>
   </section>`;
 }
-function ou(e) {
+function uu(e) {
 	return String(e ?? "").replace(/[&<>"']/g, (e) => ({
 		"&": "&amp;",
 		"<": "&lt;",
@@ -12755,16 +12826,16 @@ function ou(e) {
 		"'": "&#39;"
 	})[e]);
 }
-function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) {
+function du({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) {
 	let r = e?.querySelector("#agent-world-root");
 	if (!r) return {
 		update() {},
 		dispose() {}
 	};
-	let i = r.querySelector("#aw-canvas"), a = t || Jl({ cockpit: null }), o = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? !1, s = [], c = !1, l = 0, u = null, d = a, f = "world", p = null, m = n, h = !1, g = /* @__PURE__ */ new Map(), _ = /* @__PURE__ */ new Map(), v = new Za();
+	let i = r.querySelector("#aw-canvas"), a = t || Ql({ cockpit: null }), o = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? !1, s = [], c = !1, l = 0, u = null, d = a, f = "world", p = null, m = n, h = !1, g = /* @__PURE__ */ new Map(), _ = /* @__PURE__ */ new Map(), v = new Za();
 	v.params.Line.threshold = .2;
 	let y = new W(), b = r.querySelector("#aw-status"), x = r.querySelector("#aw-fallback"), S = (e) => {
-		x.hidden = !1, x.innerHTML = `<b>3D rendering unavailable</b><p>${ou(e)}</p><button type="button" data-aw-view="fleet">Open 2D Fleet</button>`, i.hidden = !0;
+		x.hidden = !1, x.innerHTML = `<b>3D rendering unavailable</b><p>${uu(e)}</p><button type="button" data-aw-view="fleet">Open 2D Fleet</button>`, i.hidden = !0;
 	};
 	d.available || S("Controller observation is unavailable. Use the existing Fleet Cockpit or refresh the page.");
 	let C = null, w = null, T = null, E = null, D = null;
@@ -12776,7 +12847,7 @@ function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) 
 			preserveDrawingBuffer: !1
 		});
 		if (!e) throw Error("This browser does not provide WebGL2.");
-		T = new Nn(), T.background = new J($.navy), T.fog = new Mn($.navy, 24, 54), E = new Oa(38, 1, .1, 120), E.position.set(...Xl.overview.position), C = new Sl({
+		T = new Nn(), T.background = new J($.navy), T.fog = new Mn($.navy, 24, 54), E = new Oa(38, 1, .1, 120), E.position.set(...eu.overview.position), C = new Sl({
 			canvas: i,
 			context: e,
 			antialias: !0,
@@ -12785,8 +12856,8 @@ function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) 
 		let t = new Na(10214655, 2.2);
 		t.position.set(-8, 16, 12), T.add(t);
 		let n = new Aa(3907019, 18, 30);
-		n.position.set(6, 8, -6), T.add(n), w = new Ml(E, i), w.enableDamping = !o, w.dampingFactor = .08, w.minDistance = 12, w.maxDistance = 40, w.minPolarAngle = .25, w.maxPolarAngle = 1.48, w.target.set(0, 0, -1), w.minTargetRadius = 0, w.maxTargetRadius = 18, w.addEventListener("change", () => {}), D = ru(T, d, { agents: g });
-		let a = Zl(1057338), u = new Zr(new Ci(27, .5, 21), a);
+		n.position.set(6, 8, -6), T.add(n), w = new Ml(E, i), w.enableDamping = !o, w.dampingFactor = .08, w.minDistance = 12, w.maxDistance = 40, w.minPolarAngle = .25, w.maxPolarAngle = 1.48, w.target.set(0, 0, -1), w.minTargetRadius = 0, w.maxTargetRadius = 18, w.addEventListener("change", () => {}), D = su(T, d, { agents: g });
+		let a = tu(1057338), u = new Zr(new Ci(27, .5, 21), a);
 		u.position.set(0, -.62, -1), T.add(u), O();
 		let m = (e) => {
 			c || document.hidden || f !== "world" || r.offsetParent === null || e - l < 33 || (l = e, p && k(e), w.update(), C.render(T, E));
@@ -12817,8 +12888,8 @@ function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) 
 		E.position.lerpVectors(t.fromPosition, t.toPosition, r), w.target.lerpVectors(t.fromTarget, t.toTarget, r), n >= 1 && (p = null);
 	}
 	function A(e) {
-		if (!E || !w || !Xl[e]) return;
-		let t = Xl[e], n = new G(...t.position), r = new G(...t.target);
+		if (!E || !w || !eu[e]) return;
+		let t = eu[e], n = new G(...t.position), r = new G(...t.target);
 		o ? (E.position.copy(n), w.target.copy(r), w.update()) : p = {
 			start: performance.now(),
 			duration: 400,
@@ -12847,7 +12918,7 @@ function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) 
 				new G((r.position.x + e.position.x) / 2, .22, -3.4),
 				new G(e.position.x, .22, e.position.z)
 			], s = new pi(new Dr().setFromPoints(o), new Yi({
-				color: Yl[t.state] || $.muted,
+				color: $l[t.state] || $.muted,
 				dashSize: t.state === "BLOCKED" ? .18 : .3,
 				gapSize: .16,
 				transparent: !0,
@@ -12867,16 +12938,16 @@ function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) 
 			if (r && t !== "CODEX" && t !== "ANTI-01" && t !== "ANTI-02") continue;
 			if (r && n.desk) {
 				let e = r.teamwork === "TEAMWORK_ACTIVE" && r.evidenceClass === "VERIFIED" ? 0 : -1.55;
-				n.avatar.position.set(n.desk.group.position.x + e, 0, n.desk.group.position.z + 2), n.badge.position.set(n.avatar.position.x, 1.95, n.avatar.position.z), n.badge.material.map?.dispose(), n.badge.material.map = Ql(r.id, `${r.teamwork} · ${r.evidenceClass}`), n.badge.material.needsUpdate = !0;
+				n.avatar.position.set(n.desk.group.position.x + e, 0, n.desk.group.position.z + 2), n.badge.position.set(n.avatar.position.x, 1.95, n.avatar.position.z), n.badge.material.map?.dispose(), n.badge.material.map = nu(r.id, `${r.teamwork} · ${r.evidenceClass}`), n.badge.material.needsUpdate = !0;
 			}
 			if (!n.desk?.screen) continue;
-			let i = ne(e).filter((e) => e.owner === t), a = i.length && Yl[i[0].state] || $.muted;
+			let i = ne(e).filter((e) => e.owner === t), a = i.length && $l[i[0].state] || $.muted;
 			n.desk.screen.color.setHex(a), n.desk.screen.emissive.setHex(a), n.desk.screen.emissiveIntensity = i.length ? .2 : .07;
 		}
 	}
 	function ee(e, t, n) {
 		let i = r.querySelector("#aw-selected-title"), a = r.querySelector("#aw-detail"), o = r.querySelector("#aw-evidence-class");
-		i && a && o && (n ? (i.textContent = n.title || n.id, a.textContent = te(n), o.textContent = "CONTROLLER VIEW") : e ? (i.textContent = e.id, a.textContent = iu(e, null), o.textContent = e.evidenceClass) : t ? (i.textContent = t.id, a.textContent = iu(null, t), o.textContent = t.evidence) : u ? (i.textContent = u.id, a.textContent = "This selection no longer exists in the latest controller observation.", o.textContent = "STALE") : (i.textContent = "Agent overview", a.textContent = iu(null, null), o.textContent = "UNKNOWN"), r.querySelector("#aw-summary").textContent = `${d.agents.filter((e) => e.teamwork === "TEAMWORK_ACTIVE" && e.evidenceClass === "VERIFIED").length} verified Teamwork session(s) · ${d.tasks.length} registry task(s) · ${d.approvals.length} approval request(s)`);
+		i && a && o && (n ? (i.textContent = n.title || n.id, a.textContent = te(n), o.textContent = "CONTROLLER VIEW") : e ? (i.textContent = e.id, a.textContent = cu(e, null), o.textContent = e.evidenceClass) : t ? (i.textContent = t.id, a.textContent = cu(null, t), o.textContent = t.evidence) : u ? (i.textContent = u.id, a.textContent = "This selection no longer exists in the latest controller observation.", o.textContent = "STALE") : (i.textContent = "Agent overview", a.textContent = cu(null, null), o.textContent = "UNKNOWN"), r.querySelector("#aw-summary").textContent = `${d.agents.filter((e) => e.teamwork === "TEAMWORK_ACTIVE" && e.evidenceClass === "VERIFIED").length} verified Teamwork session(s) · ${d.tasks.length} registry task(s) · ${d.approvals.length} approval request(s)`);
 	}
 	function te(e) {
 		let t = d.tasks.filter((t) => t.owner === e.id), n = d.tasks.filter((e) => e.state === "AWAITING_QA" || e.state === "FEEDBACK_REQUESTED"), r = d.locks.filter((e) => e.state === "FROZEN"), i = [
@@ -13055,4 +13126,4 @@ function su({ host: e, initialModel: t, initialMissionFilter: n = "all" } = {}) 
 	};
 }
 //#endregion
-export { au as agentWorldMarkup, su as mountAgentWorld, Jl as normalizeAgentWorld };
+export { lu as agentWorldMarkup, du as mountAgentWorld, Ql as normalizeAgentWorld };
