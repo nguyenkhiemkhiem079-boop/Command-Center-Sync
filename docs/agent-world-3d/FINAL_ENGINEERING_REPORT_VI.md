@@ -1,6 +1,6 @@
 # Báo cáo kỹ thuật — K-TOOL Agent World 3D
 
-**Kết quả:** đã triển khai và kiểm thử Agent World như một view bổ sung trên nhánh phát triển. Đây là kết quả source/staging, chưa phải bản đang chạy tại `127.0.0.1:8876`.
+**Kết quả:** Agent World 3D đã được QA lại và triển khai bổ sung lên Dashboard live `http://127.0.0.1:8876/ui` theo yêu cầu owner ngày 19-10-2026. Source branch tại thời điểm triển khai là `feature/agent-world-3d`, SHA `cf755c69783a66fd14ade5cc248f816f5eb4effd`. Không merge hay release nhánh protected.
 
 ## Thay đổi
 
@@ -10,10 +10,11 @@ Three.js `0.186.1` và OrbitControls được bundle cục bộ, license MIT đi
 
 ## Kiểm chứng
 
-- Python regression: **235/235 PASS**; log tại `full-regression-tests.txt`.
-- Frontend state tests: **6/6 PASS**; bundle production build thành công.
+- Python regression chạy lại bằng Python 3.12 và dependency lock hash: **235/235 PASS**; log tại `retest-20261019.txt`.
+- Frontend state tests chạy lại: **6/6 PASS**; bundle production build thành công.
 - `npm audit --audit-level=high`: **0 vulnerability**.
-- Chrome 155 trên Windows staging: đăng nhập bằng token tạm và Registry tạm; xác nhận WebGL2, Fleet, Timeline, CODEX inspector, camera ANTI-01, không gọi tài nguyên ngoài origin. Chạy thêm Chrome `--disable-webgl` để xác nhận thông báo fallback và Fleet link hiển thị. Hai ảnh nằm trong `AGENT_WORLD_SCREENSHOTS/`.
+- Chrome 155 trên Windows staging: đăng nhập bằng token tạm và Registry tạm; xác nhận WebGL2, Fleet, Timeline, CODEX inspector, camera ANTI-01, không gọi tài nguyên ngoài origin. Chạy thêm Chrome `--disable-webgl` để xác nhận thông báo fallback và Fleet link hiển thị. Hai source screenshots nằm trong `AGENT_WORLD_SCREENSHOTS/`.
+- Compatibility retest dùng server, orchestration và Registry v0.7 đang cài được copy vào thư mục tạm: Agent World đăng nhập, tải ba API và render WebGL2; fallback cũng đạt. Ảnh và JSON nằm trong `C:\KTOOL\CommandCenter\deployments\20261019-AGENT-WORLD-3D-cf755c6\browser-compat`.
 - Renderer headless là SwiftShader. Chưa đo FPS/GPU/VRAM trên RTX 3060 Ti; tiêu chí hiệu năng máy thật là `NOT_EXECUTED`.
 - `git diff --check`: PASS.
 
@@ -24,7 +25,7 @@ Three.js `0.186.1` và OrbitControls được bundle cục bộ, license MIT đi
 - PR mở để review: [#4 — Add read-only Three.js Agent World dashboard view](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/4), base `feature/full-fix-e2e-acceptance`.
 - GitHub check `Trusted base scope policy`: **FAIL closed**, không phải scope violation. Run `39154497058` trên head SHA `1b195cc…` yêu cầu `.github/scope-policy.json` từ trusted base `127607f…`; verifier trả `OWNER_APPROVED_BASE_POLICY_REQUIRED` và `quarantine=true`. Tôi giữ nguyên cổng và không tự thêm policy vì đây là migration cần phê duyệt riêng. PR không được merge khi check này chưa được giải quyết qua policy đã được owner duyệt.
 - Native Antigravity Teamwork, hai phiên thật đồng thời, và hoạt động subagent thật: **BLOCKED / NOT VERIFIED**. MCP/controller projection không đủ làm bằng chứng phiên thật.
-- Bản cài ở `C:\KTOOL\CommandCenter\MCP`, Registry, credentials, frozen ownership và port `8876`: **không sửa/khởi động lại/triển khai**. Kiểm tra trước đó thấy bản cài trả 404 cho `/ui/api/cockpit`; cần deployment được phê duyệt riêng sau khi cổng CI hợp lệ.
+- Deployment incrementally added Agent World to `C:\KTOOL\CommandCenter\MCP`; `/health`, page, CSS, JavaScript, Three.js bundle and license return **200**. Unauthenticated Snapshot, Run Studio and Cockpit return **401 LOGIN_REQUIRED**. A predeployment SQLite snapshot and startup snapshot have identical SHA-256; integrity check is `ok`. File backups, hashes, startup logs and evidence are in `C:\KTOOL\CommandCenter\deployments\20261019-AGENT-WORLD-3D-cf755c6`. Credentials and task records were preserved. See `LIVE_DEPLOYMENT_REPORT_VI.md`.
 
 ## Kết luận cổng
 
@@ -32,9 +33,10 @@ Three.js `0.186.1` và OrbitControls được bundle cục bộ, license MIT đi
 |---|---|
 | Source, bundle, data contract, static route security | PASS |
 | Regression, frontend tests, browser staging và no-WebGL fallback | PASS |
+| Dashboard deployment at port 8876 | PASS (additive); authenticated live browser login not executed |
 | GitHub trusted scope-policy check | FAIL closed / BLOCKED bởi policy được owner duyệt còn thiếu |
 | Runtime Antigravity thật và hai Teamwork sessions | BLOCKED |
 | RTX 3060 Ti performance/memory, physical mobile, interactive desktop QA | NOT_EXECUTED |
-| Production deployment, merge, release | NOT_EXECUTED; không được yêu cầu trong task này |
+| Protected merge / release | NOT_EXECUTED; user approval vẫn bắt buộc |
 
 Tài liệu chi tiết: `AGENT_WORLD_3D_ARCHITECTURE.md`, `THREEJS_ASSET_AND_LICENSE_MANIFEST.md`, `AGENT_WORLD_RUNTIME_STATE_CONTRACT.md`, `AGENT_WORLD_3D_QA_REPORT.md`, `AGENT_WORLD_BROWSER_E2E_REPORT.md`, `AGENT_WORLD_PERFORMANCE_REPORT.md` và `IMPLEMENTATION_CHECKLIST.md`.

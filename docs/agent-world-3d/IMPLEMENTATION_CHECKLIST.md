@@ -10,8 +10,8 @@
 | 3D render and controls | PASS | Chrome 155 headless WebGL2 screenshot and interaction checks |
 | Mobile/WebGL fallback behavior | PASS (no-WebGL fallback) / PARTIAL (mobile) | Chrome `--disable-webgl` visibly displayed fallback and preserved Fleet/Timeline; no physical mobile run |
 | Full regression | PASS | Full Python suite 235/235, frontend tests 6/6, local Vite bundle build; `full-regression-tests.txt` |
-| Production deployment at 8876 | NOT_EXECUTED | Explicitly out of scope; installed service unchanged |
+| Live Dashboard deployment at 8876 | PASS (incremental UI deployment) | Live page/assets 200; authenticated APIs remain 401 without session; SQLite backup hash unchanged; `LIVE_DEPLOYMENT_REPORT_VI.md` |
 | Real Antigravity sessions / Teamwork | BLOCKED | Runtime API returns UNKNOWN; no real session evidence |
 | RTX 3060 Ti performance / memory | NOT_EXECUTED | Browser used headless SwiftShader; no target GPU measurement |
 | PR review | PASS (opened) | PR #4 is open against `feature/full-fix-e2e-acceptance`; hosted scope policy remains failed closed |
-| Merge / deployment | NOT_EXECUTED | No merge or production deployment was requested or performed |
+| Protected merge / release | NOT_EXECUTED | UI deployment was explicitly requested; no protected merge or release occurred |

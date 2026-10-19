@@ -1,6 +1,6 @@
 # Agent World 3D QA report
 
-Date: 2026-10-19 (Asia/Bangkok). Source base: `127607f05f98a53ad7447dfa2f24721554ed6361`. Branch: `feature/agent-world-3d`.
+Date: 2026-10-19 (Asia/Bangkok). Source base: `127607f05f98a53ad7447dfa2f24721554ed6361`. Branch: `feature/agent-world-3d`; latest deployed source head: `cf755c69783a66fd14ade5cc248f816f5eb4effd`.
 
 Validated source commit: `1b195cc3a44cafa754f7653284cd43297bec240d` (pushed). Review PR: [#4](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/pull/4), targeting `feature/full-fix-e2e-acceptance`; not merged.
 
@@ -29,6 +29,12 @@ The staging harness launched local Chrome `155.0.8059.41` with fresh temporary p
 
 The browser emitted initial expected unauthorized snapshot requests before login and favicon 404 during page startup; authenticated API requests succeeded afterward. No JavaScript runtime exceptions were observed. These startup messages are not application operation failures. A no-WebGL run initially exposed a hidden fallback pane; after correction, a second screenshot confirmed the explanation and Fleet link are visible.
 
+## Re-QA and incremental live deployment (2026-10-19)
+
+The full locked Python 3.12 regression was rerun: **235/235 PASS** (`retest-20261019.txt`). Frontend tests were rerun at **6/6 PASS**, Vite production build succeeded, and `npm audit --audit-level=high` found **0 vulnerabilities**; log is stored with the deployment evidence. To check compatibility with the older installed v0.7 server, the old server, Registry and orchestration modules were copied into a disposable directory with a fresh SQLite Registry and one-time credential; the Agent World route patch and current bundled assets passed authenticated Chrome 155 WebGL2 and no-WebGL browser tests. The JSON results and screenshots are in `C:\KTOOL\CommandCenter\deployments\20261019-AGENT-WORLD-3D-cf755c6\browser-compat`.
+
+At the owner's request, the additive Dashboard change is now live at `http://127.0.0.1:8876/ui`. Seven files were installed after backing them up. The verified coordinator health, page, styles, dashboard script, 3D bundle and license returned HTTP 200. Unauthenticated snapshot, Run Studio and Cockpit endpoints all returned HTTP 401. The online SQLite backup passed integrity check; the hash from startup matched the pre-deployment snapshot, so Registry data remained unchanged. Evidence and rollback files are in `C:\KTOOL\CommandCenter\deployments\20261019-AGENT-WORLD-3D-cf755c6`. No production source branch merge or release was made.
+
 ## Safety and limits
 
-No production Registry, credentials, frozen locks, port 8876 service, Antigravity process, protected branch, or installed Dashboard was changed. Current source `/ui/api/cockpit` reports provider/runtime UNKNOWN. Therefore real Antigravity session, two-agent activity and Teamwork acceptance are BLOCKED, not passed. The installed Dashboard was previously observed to return 404 at `/ui/api/cockpit`, so this branch requires a separately approved deployment before it can be used there. No merge or deployment was performed.
+The live Dashboard was updated only as requested; credentials and role configuration were not read or changed, and no K-TOOL Revit source was touched. Provider/runtime state remains UNKNOWN. Therefore real Antigravity session, two-agent activity and Teamwork acceptance remain BLOCKED, not passed. The change is an additive local UI deployment and did not merge a protected branch or release production source. Target GPU performance and Revit 2025 runtime remain NOT_EXECUTED.
