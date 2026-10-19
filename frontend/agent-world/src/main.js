@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { normalizeAgentWorld } from './state.js';
-import { createChibiAgent, createChibiAssetPool } from './chibi.js';
+import { chibiRingColor, createChibiAgent, createChibiAssetPool, setChibiHovered, triggerChibiJump, updateChibiAgent } from './chibi.js';
 
 const palette = {
   navy: 0x0b1729, floor: 0x10223a, tile: 0x142b47, edge: 0x31506f,
@@ -123,11 +123,15 @@ function buildOffice(scene, model, records) {
     const agent = model.agents.find((entry) => entry.id === item.agent);
     const desk = makeDesk(scene, item.x, item.z, item.agent === 'CODEX' ? palette.violet : (item.agent === 'ANTI-01' ? palette.cyan : palette.blue), item.agent, item.station);
     const visualRole = agent || { id: item.agent };
-    const avatar = createChibiAgent(visualRole, agentRingState(agent), avatarPool);
+    const verifiedRuntime = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED';
+    const verifiedWork = verifiedRuntime && agent?.tasks?.some((task) => task.state === 'IN_PROGRESS'
+      && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
+    const avatar = createChibiAgent(visualRole, agentRingState(agent), avatarPool, { runtimeVerified: verifiedRuntime, workingVerified: verifiedWork });
     // Without a verified active session, keep the avatar at a neutral observation marker beside the desk.
     const active = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED';
     avatar.position.set(item.x + (active ? 0 : -1.55), 0, item.z + 2.0);
     avatar.userData.detail = { kind: 'agent', id: item.agent };
+    avatar.userData.basePositionY = avatar.position.y;
     scene.add(avatar);
     const identityBadge = badge(item.agent, `${agent?.teamwork || 'UNKNOWN'} · ${agent?.evidenceClass || 'UNKNOWN'}`, [item.x + (active ? 0 : -1.55), 1.95, item.z + 2.0], 2.8);
     scene.add(identityBadge); records.agents.set(item.agent, { avatar, desk, active, agent, badge: identityBadge });
@@ -150,7 +154,10 @@ function buildOffice(scene, model, records) {
     const offsetKey = parentId || 'UNKNOWN_PARENT';
     const index = subagentOffsets.get(offsetKey) || 0; subagentOffsets.set(offsetKey, index + 1);
     const x = parent.x + (index % 2 === 0 ? 1.6 : -1.6); const z = parent.z - 2.2 - Math.floor(index / 2) * 1.4;
-    const avatar = createChibiAgent({ id: subagent.id, role: subagent.role || 'SUBAGENT' }, agentRingState(subagent), avatarPool);
+    const verifiedRuntime = subagent.runtime === 'VERIFIED' && subagent.evidenceClass === 'VERIFIED';
+    const verifiedWork = verifiedRuntime && subagent.tasks?.some((task) => task.state === 'IN_PROGRESS'
+      && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
+    const avatar = createChibiAgent({ id: subagent.id, role: subagent.role || 'SUBAGENT' }, agentRingState(subagent), avatarPool, { runtimeVerified: verifiedRuntime, workingVerified: verifiedWork });
     avatar.position.set(x, 0, z); avatar.userData.detail = { kind: 'agent', id: subagent.id };
     scene.add(avatar); records.agents.set(subagent.id, { avatar, desk: null, active: false, agent: subagent });
     interactive.push(avatar);
@@ -209,7 +216,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
   let disposed = false; let frameTime = 0; let dirty = true; let selected = null; let currentModel = model;
   let view = 'world'; let cameraTween = null; let missionFilter = initialMissionFilter;
   let webglLost = false;
-  const agentObjects = new Map(); const taskLines = new Map();
+    const agentObjects = new Map(); const taskLines = new Map();
   const raycaster = new THREE.Raycaster(); raycaster.params.Line.threshold = 0.2;
   const pointer = new THREE.Vector2();
   const statusNode = root.querySelector('#aw-status');
@@ -220,7 +227,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
     canvas.hidden = true;
   };
   if (!currentModel.available) setFallback('Controller observation is unavailable. Use the existing Fleet Cockpit or refresh the page.');
-  let renderer = null; let controls = null; let scene = null; let camera = null; let office = null;
+  let renderer = null; let controls = null; let scene = null; let camera = null; let office = null; let animationLoop = null;
 
   if (currentModel.available && !window.matchMedia?.('(max-width: 760px)').matches) {
     try {
@@ -247,15 +254,16 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
       const floorMaterial = makeMaterial(0x10223a);
       const foundation = new THREE.Mesh(new THREE.BoxGeometry(27, 0.5, 21), floorMaterial); foundation.position.set(0, -0.62, -1); scene.add(foundation);
       installResizeObserver();
-      const animationLoop = (time) => {
+      animationLoop = (time) => {
         if (disposed || document.hidden || view !== 'world' || root.offsetParent === null) return;
-        if (time - frameTime < 33) return;
+        if (time - frameTime < 20) return;
         frameTime = time; dirty = false;
         if (cameraTween) stepCameraTween(time);
+        for (const record of agentObjects.values()) updateChibiAgent(record.avatar, time / 1000, reducedMotion);
         controls.update();
         renderer.render(scene, camera);
       };
-      renderer.setAnimationLoop(animationLoop);
+      renderer.setAnimationLoop(document.hidden ? null : animationLoop);
       const onContextLost = (event) => { event.preventDefault(); webglLost = true; renderer?.setAnimationLoop(null); setFallback('WebGL2 context lost. Agent data remains available in 2D Fleet.'); };
       const onContextRestored = () => {
         webglLost = false; dirty = true;
@@ -332,6 +340,18 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
       if (agent && id !== 'CODEX' && id !== 'ANTI-01' && id !== 'ANTI-02') continue;
       if (agent && record.desk) {
         const active = agent.teamwork === 'TEAMWORK_ACTIVE' && agent.evidenceClass === 'VERIFIED';
+        const verifiedWork = active && agent.tasks.some((task) => task.state === 'IN_PROGRESS'
+          && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
+        record.avatar.userData.runtimeState = ['FROZEN', 'BLOCKED'].some((state) => agent.tasks.some((task) => task.state === state))
+          ? 'BLOCKED' : (verifiedWork ? 'WORKING' : (active ? 'IDLE' : 'UNKNOWN'));
+        record.avatar.userData.marker.visible = record.avatar.userData.runtimeState === 'UNKNOWN';
+        record.avatar.userData.exclamation.visible = record.avatar.userData.runtimeState === 'BLOCKED';
+        record.avatar.userData.gear.visible = record.avatar.userData.runtimeState === 'WORKING';
+        record.avatar.userData.keyboard.visible = record.avatar.userData.runtimeState === 'WORKING';
+        record.avatar.userData.visualState = agentRingState(agent);
+        const ringColor = chibiRingColor(record.avatar.userData.visualState);
+        record.avatar.userData.ring.material.color.setHex(ringColor);
+        record.avatar.userData.ring.material.emissive.setHex(ringColor);
         const offsetX = active ? 0 : -1.55;
         record.avatar.position.set(record.desk.group.position.x + offsetX, 0, record.desk.group.position.z + 2.0);
         record.badge.position.set(record.avatar.position.x, 1.95, record.avatar.position.z);
@@ -468,15 +488,38 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects([...(office?.interactive || []), ...[...taskLines.values()].map((entry) => entry.line)], true);
-    if (hits.length) {
-      let node = hits[0].object;
-      while (node && !node.userData.detail && !node.userData.agentId && !node.userData.workstation) node = node.parent;
-      if (node?.userData.detail) select(node.userData.detail);
-      else if (node?.userData.agentId) select({ kind: 'agent', id: node.userData.agentId });
-      else if (node?.userData.workstation) select({ kind: 'agent', id: node.userData.agentId });
+    return hits[0]?.object || null;
+  }
+  function resolveSelection(object) {
+    let node = object;
+    while (node && !node.userData.detail && !node.userData.agentId && !node.userData.workstation && !node.userData.taskId) node = node.parent;
+    if (node?.userData.detail) return node.userData.detail;
+    if (node?.userData.taskId) return { kind: 'task', id: node.userData.taskId };
+    if (node?.userData.agentId) return { kind: 'agent', id: node.userData.agentId };
+    if (node?.userData.workstation) return { kind: 'agent', id: node.userData.agentId };
+    return null;
+  }
+  function onCanvasClick(event) {
+    const object = onPointer(event);
+    const detail = resolveSelection(object);
+    if (detail) {
+      if (detail.kind === 'agent') triggerChibiJump(agentObjects.get(detail.id)?.avatar, performance.now() / 1000);
+      select(detail);
     }
   }
-  canvas.addEventListener('click', onPointer); list.push(() => canvas.removeEventListener('click', onPointer));
+  function onCanvasMove(event) {
+    const detail = resolveSelection(onPointer(event));
+    const next = detail?.kind === 'agent' ? agentObjects.get(detail.id)?.avatar : null;
+    if (hoveredAvatar !== next) {
+      if (hoveredAvatar) setChibiHovered(hoveredAvatar, false);
+      hoveredAvatar = next || null;
+      if (hoveredAvatar) setChibiHovered(hoveredAvatar, true);
+    }
+  }
+  let hoveredAvatar = null;
+  function clearHover() { if (hoveredAvatar) setChibiHovered(hoveredAvatar, false); hoveredAvatar = null; }
+  canvas.addEventListener('click', onCanvasClick); canvas.addEventListener('pointermove', onCanvasMove); canvas.addEventListener('pointerleave', clearHover);
+  list.push(() => canvas.removeEventListener('click', onCanvasClick), () => canvas.removeEventListener('pointermove', onCanvasMove), () => canvas.removeEventListener('pointerleave', clearHover));
   const clickHandler = (event) => {
     const button = event.target.closest('[data-camera],[data-aw-view]'); if (!button || !root.contains(button)) return;
     if (button.dataset.camera) focusCamera(button.dataset.camera);
@@ -505,6 +548,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
     root.querySelector('#aw-timeline-pane').hidden = nextView !== 'timeline';
     for (const button of root.querySelectorAll('[data-aw-view]')) button.setAttribute('aria-selected', String(button.dataset.awView === nextView));
     if ((!renderer || webglLost) && nextView === 'world') setFallback('WebGL2 is unavailable. Choose the 2D Fleet view.');
+    if (renderer && !webglLost) renderer.setAnimationLoop(nextView === 'world' && !document.hidden ? animationLoop : null);
     dirty = true;
   }
 
@@ -514,8 +558,8 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
     scene.traverse((item) => {
       if (item.geometry) item.geometry.dispose();
       if (item.material) {
-        const materials = Array.isArray(item.material) ? item.material : [item.material];
-        for (const material of materials) {
+        const materialList = Array.isArray(item.material) ? item.material : [item.material];
+        for (const material of materialList) {
           if (material.map) material.map.dispose();
           material.dispose();
         }

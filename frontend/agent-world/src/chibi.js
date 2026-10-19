@@ -86,7 +86,7 @@ function addQaGoggles(pool, group) {
   mesh(pool, group, geometry(pool, 'qa-goggle-bridge', () => new T.BoxGeometry(0.12, 0.035, 0.035)), frame, [0, 1.52, 0.52]);
 }
 
-export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAssetPool()) {
+export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAssetPool(), { runtimeVerified = false, workingVerified = false } = {}) {
   const { THREE: T } = pool;
   const kind = roleKind(role);
   const id = typeof role === 'string' ? role : String(role?.id || kind);
@@ -141,6 +141,35 @@ export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAsse
   const ringMaterial = material(pool, `ring-${state}`, ringColor(state), { roughness: 0.45, metalness: 0.05, emissive: ringColor(state), emissiveIntensity: 0.2 });
   const ring = mesh(pool, group, geometry(pool, 'state-ring', () => new T.RingGeometry(0.49, 0.55, 28)), ringMaterial, [0, 0.045, 0]);
   ring.rotation.x = -Math.PI / 2;
+  const unknownMat = material(pool, 'runtime-unknown-marker', COLORS.unknown, { emissive: COLORS.unknown, emissiveIntensity: 0.22 });
+  const warningMat = material(pool, 'runtime-warning-marker', COLORS.blocked, { emissive: COLORS.blocked, emissiveIntensity: 0.3 });
+  const marker = new T.Group(); marker.position.set(0, 2.58, 0.02); group.add(marker);
+  const questionCurve = new T.CatmullRomCurve3([
+    new T.Vector3(-0.12, 0.19, 0), new T.Vector3(-0.1, 0.32, 0), new T.Vector3(0.03, 0.37, 0),
+    new T.Vector3(0.13, 0.29, 0), new T.Vector3(0.1, 0.18, 0), new T.Vector3(0.015, 0.1, 0), new T.Vector3(0, 0.04, 0),
+  ]);
+  mesh(pool, marker, geometry(pool, 'question-mark-curve', () => new T.TubeGeometry(questionCurve, 12, 0.028, 5, false)), unknownMat, [0, 0, 0]);
+  mesh(pool, marker, geometry(pool, 'question-mark-dot', () => new T.SphereGeometry(0.035, 6, 4)), unknownMat, [0, -0.035, 0]);
+  const exclamation = new T.Group(); exclamation.position.copy(marker.position); group.add(exclamation);
+  mesh(pool, exclamation, geometry(pool, 'exclamation-stem', () => new T.CapsuleGeometry(0.027, 0.19, 3, 6)), warningMat, [0, 0.12, 0]);
+  mesh(pool, exclamation, geometry(pool, 'exclamation-dot', () => new T.SphereGeometry(0.035, 6, 4)), warningMat, [0, -0.035, 0]);
+  const gear = new T.Group(); gear.position.set(0, 2.68, 0.02); group.add(gear);
+  const gearMat = material(pool, 'work-gear', COLORS.goggles, { emissive: COLORS.goggles, emissiveIntensity: 0.25 });
+  mesh(pool, gear, geometry(pool, 'work-gear-ring', () => new T.TorusGeometry(0.13, 0.035, 6, 12)), gearMat, [0, 0, 0]);
+  const tooth = geometry(pool, 'work-gear-tooth', () => new T.BoxGeometry(0.055, 0.095, 0.04));
+  for (let index = 0; index < 8; index += 1) {
+    const angle = index * Math.PI / 4;
+    mesh(pool, gear, tooth, gearMat, [Math.cos(angle) * 0.16, Math.sin(angle) * 0.16, 0]);
+  }
+  const keyboard = mesh(pool, group, geometry(pool, 'work-keyboard', () => new T.BoxGeometry(0.4, 0.055, 0.21)), material(pool, 'work-keyboard-mat', COLORS.ink), [0, 0.47, 0.43]);
+  const halo = mesh(pool, group, geometry(pool, 'hover-halo', () => new T.RingGeometry(0.62, 0.645, 32)), material(pool, 'hover-halo-mat', COLORS.chef, { emissive: COLORS.chef, emissiveIntensity: 0.4, transparent: true, opacity: 0.9 }), [0, 0.055, 0]);
+  halo.rotation.x = -Math.PI / 2; halo.visible = false;
+  const blocked = ['FROZEN', 'BLOCKED'].includes(String(state || '').toUpperCase());
+  const runtimeState = blocked ? 'BLOCKED' : (workingVerified && runtimeVerified ? 'WORKING' : (!runtimeVerified ? 'UNKNOWN' : 'IDLE'));
+  marker.visible = runtimeState === 'UNKNOWN';
+  exclamation.visible = runtimeState === 'BLOCKED';
+  gear.visible = runtimeState === 'WORKING';
+  keyboard.visible = runtimeState === 'WORKING';
   group.userData.agentId = id;
   group.userData.roleKind = kind;
   group.userData.visualState = String(state || 'UNKNOWN').toUpperCase();
@@ -149,9 +178,68 @@ export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAsse
   group.userData.arms = arms;
   group.userData.ring = ring;
   group.userData.workIndicators = [];
+  group.userData.torso = torso;
+  group.userData.marker = marker;
+  group.userData.exclamation = exclamation;
+  group.userData.gear = gear;
+  group.userData.keyboard = keyboard;
+  group.userData.hoverHalo = halo;
+  group.userData.basePositionY = group.position.y;
+  group.userData.animationPhase = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 97 / 97 * Math.PI * 2;
+  group.userData.runtimeState = runtimeState;
   group.userData.pool = pool;
   group.userData.motionState = 'IDLE';
   return group;
+}
+
+export function updateChibiAgent(group, timeSeconds, reducedMotion = false) {
+  const data = group?.userData;
+  if (!data) return;
+  const phase = data.animationPhase || 0;
+  const frozen = data.runtimeState === 'BLOCKED';
+  const unknown = data.runtimeState === 'UNKNOWN';
+  if (frozen || unknown || reducedMotion) {
+    data.head.rotation.z = unknown ? -0.075 : 0;
+    data.torso.scale.y = 0.39;
+    for (const eye of data.eyes) eye.scale.y = 1.08;
+    for (const arm of data.arms) arm.rotation.set(0, 0, 0);
+    data.gear.rotation.z = 0;
+    const jump = !frozen && !reducedMotion && timeSeconds < (data.jumpUntil || 0)
+      ? Math.sin(Math.PI * Math.max(0, (data.jumpUntil - timeSeconds) / 0.32)) * 0.28 : 0;
+    group.position.y = (data.basePositionY || 0) + jump;
+    return;
+  }
+  const cycle = 3.25 + (Math.floor(phase * 13) % 15) / 10;
+  const blinkAt = (timeSeconds + phase) % cycle;
+  const blink = blinkAt < 0.12 ? 0.12 : 1;
+  for (const eye of data.eyes) eye.scale.y = 1.08 * blink;
+  data.head.rotation.z = Math.sin(timeSeconds * 1.4 + phase) * 0.018;
+  const squash = 1 + Math.sin(timeSeconds * 2.3 + phase) * 0.018;
+  data.torso.scale.y = 0.39 * squash;
+  if (data.runtimeState === 'WORKING') {
+    data.motionState = 'WORKING_VERIFIED';
+    data.gear.rotation.z = timeSeconds * 3.1;
+    data.arms.forEach((arm, index) => { arm.rotation.x = -0.52 + Math.sin(timeSeconds * 12 + phase + index * Math.PI) * 0.2; });
+  } else {
+    data.motionState = 'IDLE';
+    data.gear.rotation.z = 0;
+    for (const arm of data.arms) arm.rotation.set(0, 0, 0);
+  }
+  const jump = timeSeconds < (data.jumpUntil || 0) ? Math.sin(Math.PI * Math.max(0, (data.jumpUntil - timeSeconds) / 0.32)) * 0.28 : 0;
+  group.position.y = (data.basePositionY || 0) + jump;
+}
+
+export function setChibiHovered(group, hovered) {
+  if (!group?.userData?.hoverHalo) return;
+  group.userData.hovered = Boolean(hovered);
+  group.userData.hoverHalo.visible = Boolean(hovered);
+  group.scale.setScalar(hovered ? 1.1 : 1);
+}
+
+export function triggerChibiJump(group, timeSeconds) {
+  if (!group?.userData || group.userData.runtimeState === 'BLOCKED') return false;
+  group.userData.jumpUntil = timeSeconds + 0.32;
+  return true;
 }
 
 export { COLORS as CHIBI_COLORS, ringColor as chibiRingColor };
