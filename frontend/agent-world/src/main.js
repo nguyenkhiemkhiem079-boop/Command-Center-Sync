@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { normalizeAgentWorld } from './state.js';
+import { createChibiAgent, createChibiAssetPool } from './chibi.js';
 
 const palette = {
   navy: 0x0b1729, floor: 0x10223a, tile: 0x142b47, edge: 0x31506f,
@@ -54,29 +55,14 @@ function box(parent, dimensions, position, material, options = {}) {
   parent.add(mesh); return mesh;
 }
 
-function makeAvatar(agent) {
-  const group = new THREE.Group();
-  const isCodex = agent.id === 'CODEX';
-  const color = isCodex ? palette.violet : (agent.id === 'ANTI-01' ? palette.cyan : palette.blue);
-  const bodyMat = makeMaterial(color);
-  const darkMat = makeMaterial(0x17283e);
-  const faceMat = makeMaterial(0xd6e8f4, { roughness: 0.48 });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.42, 0.8, 6), bodyMat);
-  body.position.y = 0.72; body.castShadow = false; group.add(body);
-  const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), faceMat);
-  head.position.y = 1.36; group.add(head);
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.47), darkMat);
-  visor.position.set(0, 1.37, 0.23); group.add(visor);
-  const eyeMat = new THREE.MeshBasicMaterial({ color });
-  for (const x of [-0.105, 0.105]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), eyeMat);
-    eye.position.set(x, 1.38, 0.475); group.add(eye);
-  }
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.035, 5, 16), makeMaterial(color, { emissive: color, emissiveIntensity: 0.28 }));
-  ring.rotation.x = Math.PI / 2; ring.position.y = 0.08; group.add(ring);
-  group.userData.agentId = agent.id;
-  group.userData.isCodex = isCodex;
-  return group;
+function agentRingState(agent) {
+  const tasks = agent?.tasks || [];
+  if (tasks.some((task) => ['BLOCKED', 'FROZEN'].includes(task.state))) return 'BLOCKED';
+  const verifiedInProgress = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED'
+    && tasks.some((task) => task.state === 'IN_PROGRESS' && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
+  if (verifiedInProgress) return 'IN_PROGRESS';
+  if (tasks.some((task) => ['ASSIGNED', 'ACKNOWLEDGED'].includes(task.state))) return 'ASSIGNED';
+  return 'UNKNOWN';
 }
 
 function makeDesk(scene, x, z, color, agentId, workstation) {
@@ -96,6 +82,7 @@ function makeDesk(scene, x, z, color, agentId, workstation) {
 }
 
 function buildOffice(scene, model, records) {
+  const avatarPool = createChibiAssetPool();
   const mats = {
     floor: makeMaterial(palette.floor), tile: makeMaterial(palette.tile), wall: makeMaterial(0x1a324d),
     glass: new THREE.MeshPhysicalMaterial({ color: 0x5ca3ff, transparent: true, opacity: 0.12, roughness: 0.25, metalness: 0.12, depthWrite: false }),
@@ -135,7 +122,8 @@ function buildOffice(scene, model, records) {
   for (const item of deskRecords) {
     const agent = model.agents.find((entry) => entry.id === item.agent);
     const desk = makeDesk(scene, item.x, item.z, item.agent === 'CODEX' ? palette.violet : (item.agent === 'ANTI-01' ? palette.cyan : palette.blue), item.agent, item.station);
-    const avatar = makeAvatar(agent || { id: item.agent });
+    const visualRole = agent || { id: item.agent };
+    const avatar = createChibiAgent(visualRole, agentRingState(agent), avatarPool);
     // Without a verified active session, keep the avatar at a neutral observation marker beside the desk.
     const active = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED';
     avatar.position.set(item.x + (active ? 0 : -1.55), 0, item.z + 2.0);
@@ -162,7 +150,7 @@ function buildOffice(scene, model, records) {
     const offsetKey = parentId || 'UNKNOWN_PARENT';
     const index = subagentOffsets.get(offsetKey) || 0; subagentOffsets.set(offsetKey, index + 1);
     const x = parent.x + (index % 2 === 0 ? 1.6 : -1.6); const z = parent.z - 2.2 - Math.floor(index / 2) * 1.4;
-    const avatar = makeAvatar({ id: subagent.id, role: 'SUBAGENT' });
+    const avatar = createChibiAgent({ id: subagent.id, role: subagent.role || 'SUBAGENT' }, agentRingState(subagent), avatarPool);
     avatar.position.set(x, 0, z); avatar.userData.detail = { kind: 'agent', id: subagent.id };
     scene.add(avatar); records.agents.set(subagent.id, { avatar, desk: null, active: false, agent: subagent });
     interactive.push(avatar);

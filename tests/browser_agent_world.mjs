@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
@@ -130,6 +130,29 @@ try {
   if (!interactionResult?.fleetVisible || !interactionResult?.timelineVisible || interactionResult.worldSelected !== 'true' || !interactionResult.selected.startsWith('CODEX')) {
     throw new Error(`Interactive view/selection controls failed: ${JSON.stringify(interactionResult)}`);
   }
+  const cameraScreenshots = [];
+  if (!expectFallback && result.webgl2) {
+    const outputDir = dirname(resolve(args.screenshot));
+    const prefix = basename(args.screenshot).replace(/\.png$/i, '');
+    const presets = [
+      ['overview', '[data-camera="overview"]'], ['top', '[data-camera="top"]'],
+      ['codex', '[data-camera="codex"]'], ['anti01', '[data-camera="anti01"]'],
+      ['anti02', '[data-camera="anti02"]'], ['qa', '[data-camera="qa"]'],
+      ['reset', '[data-camera="overview"]:last-of-type'],
+    ];
+    for (const [name, selector] of presets) {
+      const action = await send('Runtime.evaluate', {
+        expression: `(()=>{const nodes=[...document.querySelectorAll('[data-camera="overview"]')];const button=${name === 'reset' ? 'nodes.at(-1)' : `document.querySelector(${JSON.stringify(selector)})`};if(!button)return false;button.click();return true})()`,
+        returnByValue: true,
+      });
+      if (!action.result?.value) throw new Error(`Camera preset is unavailable: ${name}`);
+      await delay(550);
+      const image = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, fromSurface: true });
+      const path = resolve(outputDir, `${prefix}-camera-${name}.png`);
+      await writeFile(path, Buffer.from(image.data, 'base64'));
+      cameraScreenshots.push({ preset: name, path });
+    }
+  }
   let gpuMeasurement = null;
   let contextRecovery = null;
   if (physicalGpu && !expectFallback && result.webgl2 && soakMs >= 10000) {
@@ -154,7 +177,7 @@ try {
   const functionalPass = expectFallback ? (!result.webgl2 && Boolean(result.fallback) && result.fallbackVisible) : (result.canvas && result.webgl2);
   const report = {
     browserPath: browser, browserVersion: version.Browser, chromiumProtocol: version['Protocol-Version'],
-    navigation: args.url, viewport: { width: 1600, height: 1100 }, result, interactions: interactionResult, manualAccountSwitchGuide: { status: 'PASS', selectedRole: 'ANTI-02', providerSession: 'UNKNOWN' },
+    navigation: args.url, viewport: { width: 1600, height: 1100 }, result, interactions: interactionResult, manualAccountSwitchGuide: { status: 'PASS', selectedRole: 'ANTI-02', providerSession: 'UNKNOWN' }, cameraScreenshots,
     consoleErrors, runtimeErrors: errors, externalRequests,
     gpuMeasurement,
     contextRecovery,
