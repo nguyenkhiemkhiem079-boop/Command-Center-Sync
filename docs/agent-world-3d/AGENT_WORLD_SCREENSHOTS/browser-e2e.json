@@ -2,7 +2,7 @@
   "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "browserVersion": "Chrome/155.0.8059.41",
   "chromiumProtocol": "1.3",
-  "navigation": "http://127.0.0.1:62937/ui",
+  "navigation": "http://127.0.0.1:52844/ui",
   "viewport": {
     "width": 1600,
     "height": 1100
@@ -13,7 +13,7 @@
     "root": true,
     "fallback": null,
     "fallbackVisible": false,
-    "worldLabel": "AGENT WORLD\nController data · CONTROLLER_METADATA_PROJECTION · 2026-10-19T02:58:57.296893+00:00\nMission \nAll recorded missions\n3D World\n2D Fleet\nEvent Timeline\nVERIFIED activity only · runtime defaults UNKNOWN\nAGENT WORLD · LIVE REGISTRY PROJECTION\nSource CONTROLLER_METADATA_PROJECTION · 2026-10-19T02:58:57.296893+00:00\nIsometric overview\nTop view\nCodex station\nANTI-01 station\nANTI-02 station\nIndependent QA lab\nReset\nLIVE CONTROLLER OBSERVATION\nAgent overview\nUNKNOWN\nSelect an agent, workstation, task path or office zone to inspect controller-recorded metadata.\n0 verified Teamwork session(s) · 0 registry task(s) · 0 approval request(s)\nState legend\nAssigned\nController says in progress\nFrozen / blocked\nRuntime unknown\n\nMCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.",
+    "worldLabel": "AGENT WORLD\nController data · CONTROLLER_METADATA_PROJECTION · 2026-10-19T03:00:50.387290+00:00\nMission \nAll recorded missions\n3D World\n2D Fleet\nEvent Timeline\nVERIFIED activity only · runtime defaults UNKNOWN\nAGENT WORLD · LIVE REGISTRY PROJECTION\nSource CONTROLLER_METADATA_PROJECTION · 2026-10-19T03:00:50.387290+00:00\nIsometric overview\nTop view\nCodex station\nANTI-01 station\nANTI-02 station\nIndependent QA lab\nReset\nLIVE CONTROLLER OBSERVATION\nAgent overview\nUNKNOWN\nCODEX\nANTI-01\nANTI-02\nSelect an agent, workstation, task path or office zone to inspect controller-recorded metadata.\n0 verified Teamwork session(s) · 0 registry task(s) · 0 approval request(s)\nState legend\nAssigned\nController says in progress\nFrozen / blocked\nRuntime unknown\n\nMCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.",
     "canvas": true,
     "webgl2": true,
     "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
@@ -25,6 +25,7 @@
     "fleetVisible": true,
     "selected": "CODEX",
     "timelineVisible": true,
+    "keyboardSelection": "ANTI-01",
     "worldSelected": "true",
     "anti01Camera": "ANTI-01 station"
   },
@@ -65,8 +66,7 @@
   ],
   "consoleErrors": [
     "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
   ],
   "runtimeErrors": [],
   "externalRequests": [],

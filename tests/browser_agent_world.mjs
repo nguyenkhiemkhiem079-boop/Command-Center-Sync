@@ -29,7 +29,7 @@ async function freePort() {
 const port = await freePort();
 const profile = await mkdtemp(join(tmpdir(), 'ktool-agent-world-chrome-'));
 const chrome = spawn(browser, [
-  ...(physicalGpu ? ['--enable-webgl', '--use-angle=d3d11'] : ['--headless=new', ...(expectFallback ? ['--disable-webgl'] : ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])]),
+  ...(physicalGpu ? ['--enable-webgl', '--use-angle=d3d11', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] : ['--headless=new', ...(expectFallback ? ['--disable-webgl'] : ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])]),
   '--remote-allow-origins=*', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--window-size=1600,1100', 'about:blank',
 ], { stdio: 'ignore', windowsHide: !physicalGpu });
@@ -123,11 +123,11 @@ try {
   if (!result.root) throw new Error(`Agent World root did not mount: ${JSON.stringify({ inspection, result, errors, consoleErrors, requests })}`);
   if (!result.canvas && !result.fallback) throw new Error('Neither WebGL canvas nor the explicit fallback was rendered');
   const interaction = await send('Runtime.evaluate', {
-    expression: `(()=>{const click=(s)=>document.querySelector(s)?.click();click('[data-aw-view="fleet"]');const fleetVisible=!document.querySelector('#aw-fleet-pane').hidden;click('#aw-fleet-pane button');const selected=document.querySelector('#aw-selected-title').textContent;click('[data-aw-view="timeline"]');const timelineVisible=!document.querySelector('#aw-timeline-pane').hidden;click('[data-aw-view="world"]');click('[data-camera="anti01"]');return {fleetVisible,selected,timelineVisible,worldSelected:document.querySelector('[data-aw-view="world"]').getAttribute('aria-selected'),anti01Camera:document.querySelector('[data-camera="anti01"]').textContent}})()`,
+    expression: `(()=>{const click=(s)=>document.querySelector(s)?.click();click('[data-aw-view="fleet"]');const fleetVisible=!document.querySelector('#aw-fleet-pane').hidden;click('#aw-fleet-pane button');const selected=document.querySelector('#aw-selected-title').textContent;click('[data-aw-view="timeline"]');const timelineVisible=!document.querySelector('#aw-timeline-pane').hidden;click('[data-aw-view="world"]');click('[data-aw-select-agent="ANTI-01"]');const keyboardSelection=document.querySelector('#aw-selected-title').textContent;click('[data-camera="anti01"]');return {fleetVisible,selected,timelineVisible,keyboardSelection,worldSelected:document.querySelector('[data-aw-view="world"]').getAttribute('aria-selected'),anti01Camera:document.querySelector('[data-camera="anti01"]').textContent}})()`,
     returnByValue: true,
   });
   const interactionResult = interaction.result?.value;
-  if (!interactionResult?.fleetVisible || !interactionResult?.timelineVisible || interactionResult.worldSelected !== 'true' || !interactionResult.selected.startsWith('CODEX')) {
+  if (!interactionResult?.fleetVisible || !interactionResult?.timelineVisible || interactionResult.worldSelected !== 'true' || !interactionResult.selected.startsWith('CODEX') || interactionResult.keyboardSelection !== 'ANTI-01') {
     throw new Error(`Interactive view/selection controls failed: ${JSON.stringify(interactionResult)}`);
   }
   const cameraScreenshots = [];
@@ -156,10 +156,16 @@ try {
   let gpuMeasurement = null;
   let contextRecovery = null;
   if (physicalGpu && !expectFallback && result.webgl2 && soakMs >= 10000) {
+    const started = await send('Runtime.evaluate', {
+      expression: `(()=>{const canvas=document.querySelector('#aw-canvas');const gl=canvas?.getContext('webgl2');if(!gl)return {error:'WEBGL2_UNAVAILABLE'};const info=gl.getExtension('WEBGL_debug_renderer_info');const memory=()=>performance.memory?.usedJSHeapSize??null;const sample={renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):'RENDERER_HIDDEN',webglVersion:gl.getParameter(gl.VERSION),startedAt:performance.now(),frames:0,renderStart:canvas.agentWorldRenderCount??null,heapStartBytes:memory(),heapPeakSampledBytes:memory(),heapSamples:0,active:true};window.__awPerfSample=sample;const tick=()=>{if(!sample.active)return;sample.frames++;requestAnimationFrame(tick)};requestAnimationFrame(tick);sample.timer=setInterval(()=>{const value=memory();if(value!==null){sample.heapSamples++;sample.heapPeakSampledBytes=Math.max(sample.heapPeakSampledBytes||0,value)}},1000);return {renderer:sample.renderer,webglVersion:sample.webglVersion,renderCounterAvailable:sample.renderStart!==null}})()`,
+      returnByValue: true,
+    });
+    if (started.result?.value?.error) throw new Error(`Physical GPU measurement could not start: ${started.result.value.error}`);
+    await delay(soakMs);
     const measurement = await send('Runtime.evaluate', {
-      expression: `(()=>new Promise(resolve=>{const canvas=document.querySelector('#aw-canvas');const gl=canvas?.getContext('webgl2');if(!gl){resolve({error:'WEBGL2_UNAVAILABLE'});return}const info=gl.getExtension('WEBGL_debug_renderer_info');const renderer=info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):'RENDERER_HIDDEN';const frames=[];let lastDraw=0;for(const name of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced']){const original=gl[name]?.bind(gl);if(!original)continue;gl[name]=(...args)=>{const now=performance.now();if(now-lastDraw>20)frames.push(now);lastDraw=now;return original(...args)}}const heap=[];const memory=()=>performance.memory?.usedJSHeapSize??null;const initialHeap=memory();let peakHeap=initialHeap;const sampler=setInterval(()=>{const value=memory();if(value!==null){heap.push(value);peakHeap=Math.max(peakHeap||0,value)}},1000);const start=performance.now();setTimeout(()=>{clearInterval(sampler);const elapsed=performance.now()-start;const finalHeap=memory();resolve({renderer,elapsedMs:Math.round(elapsed),renderBatches:frames.length,fps:Math.round(frames.length*1000/elapsed*10)/10,heapStartBytes:initialHeap,heapEndBytes:finalHeap,heapPeakSampledBytes:peakHeap,heapSamples:heap.length,webglVersion:gl.getParameter(gl.VERSION)})},${soakMs})}))()`,
-      awaitPromise: true, returnByValue: true,
-    }, soakMs + 10000);
+      expression: `(()=>{const sample=window.__awPerfSample;const canvas=document.querySelector('#aw-canvas');if(!sample)return {error:'SAMPLE_MISSING'};sample.active=false;clearInterval(sample.timer);const elapsed=performance.now()-sample.startedAt;const memory=performance.memory?.usedJSHeapSize??null;const renderedFrames=sample.renderStart===null?null:(canvas.agentWorldRenderCount-sample.renderStart);return {renderer:sample.renderer,webglVersion:sample.webglVersion,elapsedMs:Math.round(elapsed),animationFrames:sample.frames,animationFrameRate:Math.round(sample.frames*1000/elapsed*10)/10,renderedFrames,renderedFps:renderedFrames===null?null:Math.round(renderedFrames*1000/elapsed*10)/10,heapStartBytes:sample.heapStartBytes,heapEndBytes:memory,heapPeakSampledBytes:sample.heapPeakSampledBytes,heapSamples:sample.heapSamples,fpsMethod:'renderer.render submissions counted by Agent World during the visible-tab soak; browser animation-frame rate reported separately'}})()`,
+      returnByValue: true,
+    });
     gpuMeasurement = measurement.result?.value || null;
     if (!gpuMeasurement?.renderer || gpuMeasurement.error) throw new Error(`Physical GPU measurement failed: ${JSON.stringify(gpuMeasurement)}`);
     if (/swiftshader|software|llvmpipe/i.test(gpuMeasurement.renderer)) throw new Error(`Software renderer detected; physical GPU evidence rejected: ${gpuMeasurement.renderer}`);

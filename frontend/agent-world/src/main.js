@@ -201,7 +201,7 @@ function agentWorldMarkup(model) {
       <div id="aw-fleet-pane" class="aw-list-pane" hidden></div>
       <div id="aw-timeline-pane" class="aw-list-pane" hidden><div class="aw-filters"><label>Agent <select id="aw-agent-filter"><option value="all">All</option><option>CODEX</option><option>ANTI-01</option><option>ANTI-02</option></select></label><label>Type <select id="aw-type-filter"><option value="all">All recorded events</option></select></label><label>Wave <select id="aw-wave-filter"><option value="all">All recorded waves</option></select></label><label>Since <input type="datetime-local" id="aw-time-filter"></label><span>Historical records are labeled REPLAY; no events are invented.</span></div><div id="aw-timeline-list"></div></div>
       <div class="aw-camera" aria-label="Camera presets">${Object.entries(PRESETS).map(([key, value]) => `<button type="button" data-camera="${key}" title="${value.label}">${escapeText(value.label)}</button>`).join('')}<button type="button" data-camera="overview">Reset</button></div>
-    </div><aside class="aw-inspector" aria-live="polite"><div class="aw-inspector-head"><div class="aw-eyebrow">LIVE CONTROLLER OBSERVATION</div><h2 id="aw-selected-title">Agent overview</h2><span id="aw-evidence-class" class="aw-evidence">UNKNOWN</span></div><pre id="aw-detail">${escapeText(detailText(null, null))}</pre><div class="aw-summary" id="aw-summary"></div><div class="aw-legend"><b>State legend</b><span><i class="dot assigned"></i> Assigned</span><span><i class="dot active"></i> Controller says in progress</span><span><i class="dot blocked"></i> Frozen / blocked</span><span><i class="dot unknown"></i> Runtime unknown</span></div><p class="aw-disclaimer">MCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.</p></aside></div>
+    </div><aside class="aw-inspector" aria-live="polite"><div class="aw-inspector-head"><div class="aw-eyebrow">LIVE CONTROLLER OBSERVATION</div><h2 id="aw-selected-title">Agent overview</h2><span id="aw-evidence-class" class="aw-evidence">UNKNOWN</span></div><nav class="aw-agent-shortcuts" aria-label="Select agent">${(model?.agents || []).map((agent) => `<button type="button" data-aw-select-agent="${escapeText(agent.id)}">${escapeText(agent.id)}</button>`).join('')}</nav><pre id="aw-detail">${escapeText(detailText(null, null))}</pre><div class="aw-summary" id="aw-summary"></div><div class="aw-legend"><b>State legend</b><span><i class="dot assigned"></i> Assigned</span><span><i class="dot active"></i> Controller says in progress</span><span><i class="dot blocked"></i> Frozen / blocked</span><span><i class="dot unknown"></i> Runtime unknown</span></div><p class="aw-disclaimer">MCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.</p></aside></div>
   </section>`;
 }
 function escapeText(value) { return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
@@ -214,8 +214,10 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   const list = [];
   let disposed = false; let frameTime = 0; let dirty = true; let selected = null; let currentModel = model;
+  let renderedFrameCount = 0;
   let view = 'world'; let cameraTween = null; let missionFilter = initialMissionFilter;
   let webglLost = false;
+  let worldVisible = true;
     const agentObjects = new Map(); const taskLines = new Map();
   const raycaster = new THREE.Raycaster(); raycaster.params.Line.threshold = 0.2;
   const pointer = new THREE.Vector2();
@@ -231,13 +233,14 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
 
   if (currentModel.available && !window.matchMedia?.('(max-width: 760px)').matches) {
     try {
-      const gl = canvas.getContext('webgl2', { antialias: true, powerPreference: 'low-power', alpha: false, preserveDrawingBuffer: false });
+      const gl = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance', alpha: false, preserveDrawingBuffer: false });
       if (!gl) throw new Error('This browser does not provide WebGL2.');
       scene = new THREE.Scene(); scene.background = new THREE.Color(palette.navy); scene.fog = new THREE.Fog(palette.navy, 24, 54);
       camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
       camera.position.set(...PRESETS.overview.position);
-      renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true, powerPreference: 'low-power' });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
+      renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true, powerPreference: 'high-performance' });
+      Object.defineProperty(canvas, 'agentWorldRenderCount', { configurable: true, get: () => renderedFrameCount });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.0));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.08;
@@ -262,17 +265,31 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
         for (const record of agentObjects.values()) updateChibiAgent(record.avatar, time / 1000, reducedMotion);
         controls.update();
         renderer.render(scene, camera);
+        renderedFrameCount += 1;
       };
       renderer.setAnimationLoop(document.hidden ? null : animationLoop);
       const onContextLost = (event) => { event.preventDefault(); webglLost = true; renderer?.setAnimationLoop(null); setFallback('WebGL2 context lost. Agent data remains available in 2D Fleet.'); };
       const onContextRestored = () => {
         webglLost = false; dirty = true;
-        if (view === 'world') { fallback.hidden = true; canvas.hidden = false; renderer?.setAnimationLoop(animationLoop); }
+        if (view === 'world') { fallback.hidden = true; canvas.hidden = false; renderer?.setAnimationLoop(!document.hidden && worldVisible ? animationLoop : null); }
         statusNode.textContent = 'WebGL2 context restored';
+      };
+      const onVisibilityChange = () => {
+        if (document.hidden) renderer?.setAnimationLoop(null);
+        else if (view === 'world' && worldVisible && !webglLost && !disposed) renderer?.setAnimationLoop(animationLoop);
       };
       canvas.addEventListener('webglcontextlost', onContextLost);
       canvas.addEventListener('webglcontextrestored', onContextRestored);
-      list.push(() => canvas.removeEventListener('webglcontextlost', onContextLost), () => canvas.removeEventListener('webglcontextrestored', onContextRestored));
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      list.push(() => canvas.removeEventListener('webglcontextlost', onContextLost), () => canvas.removeEventListener('webglcontextrestored', onContextRestored), () => document.removeEventListener('visibilitychange', onVisibilityChange));
+      if ('IntersectionObserver' in window) {
+        const visibilityObserver = new IntersectionObserver(([entry]) => {
+          worldVisible = Boolean(entry?.isIntersecting);
+          renderer?.setAnimationLoop(view === 'world' && worldVisible && !document.hidden && !webglLost ? animationLoop : null);
+        });
+        visibilityObserver.observe(canvas);
+        list.push(() => visibilityObserver.disconnect());
+      }
       root.querySelector('#aw-status').textContent = '3D ready · live refresh follows authenticated controller polling';
     } catch (error) {
       setFallback(error?.message || 'WebGL2 initialization failed.');
@@ -521,9 +538,10 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
   canvas.addEventListener('click', onCanvasClick); canvas.addEventListener('pointermove', onCanvasMove); canvas.addEventListener('pointerleave', clearHover);
   list.push(() => canvas.removeEventListener('click', onCanvasClick), () => canvas.removeEventListener('pointermove', onCanvasMove), () => canvas.removeEventListener('pointerleave', clearHover));
   const clickHandler = (event) => {
-    const button = event.target.closest('[data-camera],[data-aw-view]'); if (!button || !root.contains(button)) return;
+    const button = event.target.closest('[data-camera],[data-aw-view],[data-aw-select-agent]'); if (!button || !root.contains(button)) return;
     if (button.dataset.camera) focusCamera(button.dataset.camera);
     if (button.dataset.awView) setView(button.dataset.awView);
+    if (button.dataset.awSelectAgent) select({ kind: 'agent', id: button.dataset.awSelectAgent });
   };
   root.addEventListener('click', clickHandler); list.push(() => root.removeEventListener('click', clickHandler));
   const filterHandler = () => { renderTimeline(currentModel); };
@@ -548,23 +566,29 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
     root.querySelector('#aw-timeline-pane').hidden = nextView !== 'timeline';
     for (const button of root.querySelectorAll('[data-aw-view]')) button.setAttribute('aria-selected', String(button.dataset.awView === nextView));
     if ((!renderer || webglLost) && nextView === 'world') setFallback('WebGL2 is unavailable. Choose the 2D Fleet view.');
-    if (renderer && !webglLost) renderer.setAnimationLoop(nextView === 'world' && !document.hidden ? animationLoop : null);
+    if (renderer && !webglLost) renderer.setAnimationLoop(nextView === 'world' && worldVisible && !document.hidden ? animationLoop : null);
     dirty = true;
   }
 
   function disposeScene() {
     if (!scene) return;
     renderer?.setAnimationLoop(null); controls?.dispose();
+    const geometries = new Set(); const materialSet = new Set(); const textures = new Set();
     scene.traverse((item) => {
-      if (item.geometry) item.geometry.dispose();
+      if (item.geometry) geometries.add(item.geometry);
       if (item.material) {
         const materialList = Array.isArray(item.material) ? item.material : [item.material];
         for (const material of materialList) {
-          if (material.map) material.map.dispose();
-          material.dispose();
+          materialSet.add(material);
+          if (material.map) textures.add(material.map);
+          if (material.gradientMap) textures.add(material.gradientMap);
         }
       }
     });
+    for (const record of agentObjects.values()) for (const texture of record.avatar.userData.pool?.textures?.values?.() || []) textures.add(texture);
+    geometries.forEach((geometry) => geometry.dispose());
+    materialSet.forEach((material) => material.dispose());
+    textures.forEach((texture) => texture.dispose());
     renderer?.dispose(); renderer?.forceContextLoss();
     scene = null; renderer = null; controls = null; camera = null;
   }

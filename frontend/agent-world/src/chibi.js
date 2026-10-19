@@ -18,20 +18,33 @@ const COLORS = Object.freeze({
 });
 
 export function createChibiAssetPool(THREEApi = THREE) {
-  return { THREE: THREEApi, geometries: new Map(), materials: new Map() };
+  return { THREE: THREEApi, geometries: new Map(), materials: new Map(), textures: new Map() };
 }
 
 const geometry = (pool, key, create) => {
   if (!pool.geometries.has(key)) pool.geometries.set(key, create());
   return pool.geometries.get(key);
 };
+function toonGradient(pool) {
+  const { THREE: T } = pool;
+  if (!pool.textures.has('toon-3-band')) {
+    const gradient = new T.DataTexture(new Uint8Array([54, 142, 255]), 3, 1, T.RedFormat);
+    gradient.magFilter = T.NearestFilter; gradient.minFilter = T.NearestFilter; gradient.generateMipmaps = false; gradient.needsUpdate = true;
+    pool.textures.set('toon-3-band', gradient);
+  }
+  return pool.textures.get('toon-3-band');
+}
 const material = (pool, key, color, options = {}) => {
-  if (!pool.materials.has(key)) pool.materials.set(key, new pool.THREE.MeshStandardMaterial({ color, roughness: 0.8, ...options }));
+  if (!pool.materials.has(key)) {
+    const { roughness: _roughness, metalness: _metalness, ...toonOptions } = options;
+    pool.materials.set(key, new pool.THREE.MeshToonMaterial({ color, gradientMap: toonGradient(pool), ...toonOptions }));
+  }
   return pool.materials.get(key);
 };
-const mesh = (pool, parent, geom, mat, position, scale = [1, 1, 1]) => {
+const mesh = (pool, parent, geom, mat, position, scale = [1, 1, 1], outline = false) => {
   const result = new pool.THREE.Mesh(geom, mat);
   result.position.set(...position); result.scale.set(...scale); result.castShadow = true;
+  result.userData.chibiOutline = outline;
   parent.add(result); return result;
 };
 
@@ -55,11 +68,11 @@ function ringColor(state) {
 function addChefHat(pool, group) {
   const { THREE: T } = pool;
   const white = material(pool, 'chef-white', COLORS.chef);
-  mesh(pool, group, geometry(pool, 'chef-band', () => new T.CylinderGeometry(0.34, 0.34, 0.12, 10)), white, [0, 2.0, 0]);
-  mesh(pool, group, geometry(pool, 'chef-crown', () => new T.CylinderGeometry(0.27, 0.31, 0.25, 10)), white, [0, 2.16, 0]);
+  mesh(pool, group, geometry(pool, 'chef-band', () => new T.CylinderGeometry(0.34, 0.34, 0.12, 10)), white, [0, 2.0, 0], [1, 1, 1], true);
+  mesh(pool, group, geometry(pool, 'chef-crown', () => new T.CylinderGeometry(0.27, 0.31, 0.25, 10)), white, [0, 2.16, 0], [1, 1, 1], true);
   const puff = geometry(pool, 'chef-puff', () => new T.SphereGeometry(0.2, 8, 6));
   for (const [x, y, z, scale] of [[-0.17, 2.27, 0, [1, 0.86, 1]], [0, 2.34, 0, [1.03, 1, 1]], [0.17, 2.27, 0, [1, 0.86, 1]]]) {
-    mesh(pool, group, puff, white, [x, y, z], scale);
+    mesh(pool, group, puff, white, [x, y, z], scale, true);
   }
 }
 
@@ -67,9 +80,9 @@ function addHelmet(pool, group, color, prefix) {
   const { THREE: T } = pool;
   const helmet = material(pool, `${prefix}-helmet`, color);
   const brim = geometry(pool, 'helmet-brim', () => new T.CylinderGeometry(0.52, 0.52, 0.095, 12));
-  mesh(pool, group, brim, helmet, [0, 1.98, 0]);
+  mesh(pool, group, brim, helmet, [0, 1.98, 0], [1, 1, 1], true);
   const dome = geometry(pool, 'helmet-dome', () => new T.SphereGeometry(0.43, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2));
-  mesh(pool, group, dome, helmet, [0, 2.01, 0], [1, 0.92, 0.92]);
+  mesh(pool, group, dome, helmet, [0, 2.01, 0], [1, 0.92, 0.92], true);
   const strap = material(pool, 'helmet-strap', COLORS.ink);
   mesh(pool, group, geometry(pool, 'helmet-strap-geometry', () => new T.BoxGeometry(0.035, 0.23, 0.54)), strap, [0, 1.81, 0.19]);
 }
@@ -105,23 +118,23 @@ export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAsse
     mesh(pool, group, geometry(pool, 'boot', () => new T.SphereGeometry(0.18, 8, 6)), dark, [x, 0.16, 0.04], [1, 0.76, 1.25]);
     mesh(pool, group, geometry(pool, 'leg', () => new T.CapsuleGeometry(0.13, 0.17, 3, 8)), clothes, [x, 0.38, 0]);
   }
-  const torso = mesh(pool, group, sphere, clothes, [0, 0.72, 0], [0.4, 0.39, 0.31]);
+  const torso = mesh(pool, group, sphere, clothes, [0, 0.72, 0], [0.4, 0.39, 0.31], true);
   torso.userData.chibiPart = 'torso';
   if (kind === 'QA') {
     const coat = material(pool, 'qa-coat', COLORS.coat);
-    mesh(pool, group, sphere, coat, [0, 0.75, 0.09], [0.43, 0.39, 0.27]);
+    mesh(pool, group, sphere, coat, [0, 0.75, 0.09], [0.43, 0.39, 0.27], true);
     mesh(pool, group, geometry(pool, 'qa-coat-button', () => new T.SphereGeometry(0.035, 6, 4)), material(pool, 'qa-coat-shade', COLORS.coatShade), [0, 0.76, 0.365]);
   }
   const armGeometry = geometry(pool, 'arm', () => new T.CapsuleGeometry(0.12, 0.22, 3, 8));
   const arms = [];
   for (const side of [-1, 1]) {
     const pivot = new T.Group(); pivot.position.set(side * 0.34, 0.88, 0.02); group.add(pivot);
-    mesh(pool, pivot, armGeometry, clothes, [side * 0.1, -0.08, 0.02], [1, 1.05, 1]);
+    mesh(pool, pivot, armGeometry, clothes, [side * 0.1, -0.08, 0.02], [1, 1.05, 1], true);
     mesh(pool, pivot, sphere, skin, [side * 0.11, -0.22, 0.1], [0.14, 0.13, 0.13]);
     arms.push(pivot);
   }
 
-  const head = mesh(pool, group, sphere, skin, [0, 1.47, 0], [0.59, 0.58, 0.53]);
+  const head = mesh(pool, group, sphere, skin, [0, 1.47, 0], [0.59, 0.58, 0.53], true);
   head.userData.chibiPart = 'head';
   const eyes = [];
   for (const x of [-0.19, 0.19]) {
@@ -164,6 +177,15 @@ export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAsse
   const keyboard = mesh(pool, group, geometry(pool, 'work-keyboard', () => new T.BoxGeometry(0.4, 0.055, 0.21)), material(pool, 'work-keyboard-mat', COLORS.ink), [0, 0.47, 0.43]);
   const halo = mesh(pool, group, geometry(pool, 'hover-halo', () => new T.RingGeometry(0.62, 0.645, 32)), material(pool, 'hover-halo-mat', COLORS.chef, { emissive: COLORS.chef, emissiveIntensity: 0.4, transparent: true, opacity: 0.9 }), [0, 0.055, 0]);
   halo.rotation.x = -Math.PI / 2; halo.visible = false;
+  const shadow = mesh(pool, group, geometry(pool, 'contact-shadow', () => new T.CircleGeometry(0.48, 24)), material(pool, 'contact-shadow-mat', 0x06101c, { transparent: true, opacity: 0.28, depthWrite: false }), [0, 0.018, 0]);
+  shadow.rotation.x = -Math.PI / 2; shadow.renderOrder = -2; shadow.userData.chibiOutline = false;
+  const outlineMaterial = material(pool, 'chibi-outline', 0x101a2a, { side: T.BackSide, depthWrite: true });
+  group.traverse((object) => {
+    if (!object.isMesh || !object.userData.chibiOutline) return;
+    const outline = new T.Mesh(object.geometry, outlineMaterial);
+    outline.scale.setScalar(1.045); outline.renderOrder = -1; outline.userData.chibiOutlineShell = true;
+    object.add(outline);
+  });
   const blocked = ['FROZEN', 'BLOCKED'].includes(String(state || '').toUpperCase());
   const runtimeState = blocked ? 'BLOCKED' : (workingVerified && runtimeVerified ? 'WORKING' : (!runtimeVerified ? 'UNKNOWN' : 'IDLE'));
   marker.visible = runtimeState === 'UNKNOWN';
@@ -184,6 +206,7 @@ export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAsse
   group.userData.gear = gear;
   group.userData.keyboard = keyboard;
   group.userData.hoverHalo = halo;
+  group.userData.contactShadow = shadow;
   group.userData.basePositionY = group.position.y;
   group.userData.animationPhase = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 97 / 97 * Math.PI * 2;
   group.userData.runtimeState = runtimeState;

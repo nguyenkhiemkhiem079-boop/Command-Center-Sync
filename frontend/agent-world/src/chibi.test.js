@@ -109,3 +109,15 @@ test('reduced motion disables work animation while preserving accessible hover a
   assert.equal(avatar.userData.hoverHalo.visible, false);
   assert.equal(avatar.scale.x, 1);
 });
+
+test('polish uses pooled three-band toon shading, thin outline shells and contact shadows', () => {
+  const pool = createChibiAssetPool();
+  const first = createChibiAgent('CODEX', 'UNKNOWN', pool);
+  const second = createChibiAgent('ANTI-01', 'ASSIGNED', pool);
+  assert.ok(first.userData.head.material.isMeshToonMaterial);
+  assert.equal(first.userData.head.material.gradientMap, second.userData.head.material.gradientMap);
+  assert.equal(pool.textures.size, 1);
+  assert.equal(first.userData.contactShadow.geometry.type, 'CircleGeometry');
+  assert.ok(meshes(first).some((object) => object.userData.chibiOutlineShell));
+  assert.equal(pool.geometries.get('contact-shadow'), second.userData.contactShadow.geometry);
+});
