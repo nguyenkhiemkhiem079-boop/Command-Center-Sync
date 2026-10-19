@@ -1,8 +1,8 @@
 # MASTER FEATURE CROSSWALK — Full Fix delta
 
-Source base `eb87bbed0f435585c035807fda320b9a4087095e`; current candidate is this base plus the uncommitted trusted-hosted-QA source in the working tree. Deployed source remains `c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d`.
-210 regression tests executed on Windows, 190.193s, OK; local shared principal, not production-trusted QA. The new hosted verifier is source-only and has not run in GitHub Actions.
-Counts: {"PARTIAL": 42, "BLOCKED": 5, "IMPLEMENTED_AND_VERIFIED": 9}. IMPLEMENTED_AND_VERIFIED applies only to the explicitly stated local contract. All rows remain undeployed in the new candidate. No NOT_EXECUTED is aggregated into PASS.
+This W1–W4 crosswalk and its 56-row status count were audited against source `552197b91b09c955d0fb48f96e329eba20b98f64` (18 Oct 2026). The current development checkout is `feature/agent-world-3d` at `0d58c2cb6e5c4e4863beea3149f7ca0d7ab828cf`, which descends from that source and adds Agent World chibi/runtime-accuracy work plus a supervised Remote Control handoff. Current-HEAD verification is recorded in `CONTINUATION_CHECKPOINT_20261019_VI.md`. The installed Dashboard source remains `c377d103da179e3ef1f5d48a11d8d9e6d1ee5a3d`; no installation files were changed in this checkpoint.
+Historical regression at the W1–W4 audit SHA: 210 tests, 190.193s, OK; local shared principal, not production-trusted QA. Current-HEAD regression: 238 tests, 211.593s, exit 0; local checkout only. The hosted verifier has no protected full-QA attestation.
+Counts remain: {"PARTIAL": 42, "BLOCKED": 5, "IMPLEMENTED_AND_VERIFIED": 9}. IMPLEMENTED_AND_VERIFIED applies only to the explicitly stated local contract. All rows remain undeployed in the new candidate. No NOT_EXECUTED is aggregated into PASS.
 Native two independent Antigravity Teamwork sessions: BLOCKED pending permitted supervised runtime evidence; technical impossibility is not established.
 
 | ID | Status | Evidence and remaining limit |
