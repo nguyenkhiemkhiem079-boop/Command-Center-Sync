@@ -95,6 +95,15 @@ try {
     const failure = await send('Runtime.evaluate', { expression: `document.querySelector('#loginError')?.textContent||'login did not complete'`, returnByValue: true });
     throw new Error(`Disposable staging login failed: ${failure.result?.value}`);
   }
+  await send('Runtime.evaluate', { expression: `document.querySelector('[data-page="sessions"]').click()` });
+  const switchGuide = await send('Runtime.evaluate', {
+    expression: `(()=>{const button=document.querySelector('[data-act="account-switch"][data-owner="ANTI-02"]');if(!button)return {button:false};button.click();const guide=document.querySelector('#accountSwitchGuide');return {button:true,guide:guide?.innerText||'',teamworkLabel:document.querySelector('[data-page="sessions"]')?.className}})()`,
+    returnByValue: true,
+  });
+  const switchResult = switchGuide.result?.value || {};
+  if (!switchResult.button || !switchResult.guide.includes('actor: ANTI-02') || !switchResult.guide.includes('UNKNOWN / NOT_VERIFIED') || !switchResult.guide.includes('đăng xuất/đăng nhập chính thức')) {
+    throw new Error(`Manual account switch guide failed: ${JSON.stringify(switchResult)}`);
+  }
   await send('Runtime.evaluate', { expression: `document.querySelector('[data-page="agentworld"]').click()` });
   let mounted = false;
   for (let i = 0; i < 80; i++) {
@@ -145,7 +154,7 @@ try {
   const functionalPass = expectFallback ? (!result.webgl2 && Boolean(result.fallback) && result.fallbackVisible) : (result.canvas && result.webgl2);
   const report = {
     browserPath: browser, browserVersion: version.Browser, chromiumProtocol: version['Protocol-Version'],
-    navigation: args.url, viewport: { width: 1600, height: 1100 }, result, interactions: interactionResult,
+    navigation: args.url, viewport: { width: 1600, height: 1100 }, result, interactions: interactionResult, manualAccountSwitchGuide: { status: 'PASS', selectedRole: 'ANTI-02', providerSession: 'UNKNOWN' },
     consoleErrors, runtimeErrors: errors, externalRequests,
     gpuMeasurement,
     contextRecovery,
