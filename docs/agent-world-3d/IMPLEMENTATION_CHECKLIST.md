@@ -25,7 +25,7 @@ See [POST_DEPLOYMENT_QA_REPORT_VI.md](POST_DEPLOYMENT_QA_REPORT_VI.md) for the 2
 | Lifecycle state mapping and stale observations | PASS | `frontend/agent-world/src/state.test.js`; 9/9 frontend tests |
 | Full Python regression | PASS | `post-review-full-regression.txt`; 235 tests |
 | Vite bundle and dependency audit | PASS | Build success; `npm audit --audit-level=high` reported 0 vulnerabilities |
-| Hosted scope gate for PR #4 | BLOCKED / FAIL CLOSED | Run `39186551433`, job `117850080787`, implementation head `75df7c6`; policy check failed |
+| Hosted scope gate for PR #4 | BLOCKED / FAIL CLOSED | Run `39186681426`, job `117850463526`, branch head `3535ecc`; policy check failed |
 | Trusted-base policy migration | BLOCKED pending independent owner review | `SCOPE_POLICY_MIGRATION_REVIEW.md` |
 | Live authenticated Dashboard interaction | BLOCKED | `/ui` 200, data APIs 401 without active session; browser UI helper timed out; no session was altered |
 | GPU WebGL and context recovery | PASS on RTX 3050 staging | 3-minute hardware-rendered Chrome soak; renderer and memory details in post-deployment report |

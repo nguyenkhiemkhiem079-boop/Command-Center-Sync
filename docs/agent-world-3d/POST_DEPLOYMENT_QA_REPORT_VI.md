@@ -33,7 +33,7 @@ Mapping đã kiểm tra gồm `QUEUED`, `TASK_ASSIGNED`, `ACKNOWLEDGED`, `DEVELO
 
 ## Hosted CI và policy migration
 
-PR #4 vẫn mở, chưa merge. Check trên implementation head mới nhất đã push `75df7c6360b96c43dc437c95259bcc5a15f795d3` là run `39186551433`, job `117850080787`; GitHub API ghi nhận workflow/job failed và step `Verify approved assignment and real paths` thất bại. Log đầy đủ cần đăng nhập GitHub để xem; mã lỗi `OWNER_APPROVED_BASE_POLICY_REQUIRED` được ghi trong lần kiểm tra trước và tái xác nhận từ policy/base source hiện hành. [GitHub Actions run](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39186551433).
+PR #4 vẫn mở, chưa merge. Check trên branch head `3535ecc6a28553edca353f2b724ad7ca5bdc4c75` là run `39186681426`, job `117850463526`; GitHub API ghi nhận workflow/job failed và step `Verify approved assignment and real paths` thất bại. Log đầy đủ cần đăng nhập GitHub để xem; mã lỗi `OWNER_APPROVED_BASE_POLICY_REQUIRED` được ghi trong lần kiểm tra trước và tái xác nhận từ policy/base source hiện hành. [GitHub Actions run](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39186681426).
 
 Base policy hiện có `approval_state=PENDING_OWNER_APPROVAL`, chỉ assignment `CI-PILOT` với phạm vi `ci-pilot/`; workflow trusted-base đang gọi cố định assignment đó. Do đó `OWNER_APPROVED_BASE_POLICY_REQUIRED` là kết quả fail-closed dự kiến. Sau khi sửa approval state, PR #4 vẫn không được bao phủ bởi CI-PILOT; thêm nữa PR có `server.py` và `tests/` đang được policy đánh dấu protected. Không đổi policy, workflow, protection hoặc assignment trong source candidate.
 
