@@ -1,8 +1,11 @@
 # Báo cáo QA và sửa lỗi Agent World 3D sau triển khai
 
-Ngày: 19/10/2026 (Asia/Bangkok)  
-Nhánh: `feature/agent-world-3d`  
-Commit được rà soát ban đầu: `7a87fccbd474d2663cc66f390abc1b80f80e4aa0`  
+Ngày: 19/10/2026 (Asia/Bangkok)
+
+Nhánh: `feature/agent-world-3d`
+
+Commit được rà soát ban đầu: `7a87fccbd474d2663cc66f390abc1b80f80e4aa0`
+
 Dashboard production: `http://127.0.0.1:8876/ui`
 
 ## Kết quả chính

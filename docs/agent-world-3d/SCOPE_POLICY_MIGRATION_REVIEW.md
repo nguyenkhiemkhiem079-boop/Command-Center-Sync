@@ -1,6 +1,6 @@
 # Trusted scope-policy migration for PR #4 — independent owner review
 
-Status: **PROPOSAL ONLY — NOT TRUSTED, NOT ACTIVE, NOT A CI PASS**  
+Status: **PROPOSAL ONLY — NOT TRUSTED, NOT ACTIVE, NOT A CI PASS**
 Prepared from source at `7a87fccbd474d2663cc66f390abc1b80f80e4aa0`; target remains PR #4 on `feature/agent-world-3d`.
 
 ## Observed gate and why it fails
