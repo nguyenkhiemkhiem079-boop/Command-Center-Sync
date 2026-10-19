@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { normalizeAgentWorld } from './state.js';
-import { chibiRingColor, createChibiAgent, createChibiAssetPool, setChibiHovered, triggerChibiJump, updateChibiAgent } from './chibi.js';
+import { chibiRingColor, createChibiAgent, createChibiAssetPool, isVerifiedWorking, setChibiHovered, triggerChibiJump, updateChibiAgent } from './chibi.js';
 
 const palette = {
   navy: 0x0b1729, floor: 0x10223a, tile: 0x142b47, edge: 0x31506f,
@@ -65,6 +65,41 @@ function agentRingState(agent) {
   return 'UNKNOWN';
 }
 
+const DEV_CHIBI_QUERY = 'agentWorldDemo';
+const DEV_CHIBI_VALUE = 'chibi-states';
+function withDevChibiStates(model) {
+  if (!import.meta.env.DEV || new URLSearchParams(window.location.search).get(DEV_CHIBI_QUERY) !== DEV_CHIBI_VALUE) return model;
+  const now = new Date().toISOString();
+  const cases = [
+    ['DEMO-ASSIGNED', 'ASSIGNED', 'UNKNOWN', 'FRESH'],
+    ['DEMO-LAUNCH', 'LAUNCH_REQUESTED', 'VERIFIED', 'FRESH'],
+    ['DEMO-UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'FRESH'],
+    ['DEMO-NOT-VERIFIED', 'IN_PROGRESS', 'AGENT_REPORTED', 'FRESH'],
+    ['DEMO-STALE', 'IN_PROGRESS', 'VERIFIED', 'STALE'],
+    ['DEMO-MISSING-FIELDS', 'UNKNOWN', 'UNKNOWN', null],
+    ['DEMO-FROZEN', 'FROZEN', 'VERIFIED', 'FRESH'],
+    ['DEMO-BLOCKED', 'BLOCKED', 'VERIFIED', 'FRESH'],
+    ['DEMO-RUNNING-VERIFIED', 'IN_PROGRESS', 'VERIFIED', 'FRESH'],
+  ];
+  const subagents = cases.map(([id, state, evidenceClass, freshness]) => {
+    const working = id === 'DEMO-RUNNING-VERIFIED';
+    const task = { id: `${id}-TASK`, state, freshness, evidence: 'CONTROLLER_DEMO_FIXTURE', scope: 'DEV_ONLY', lastObservedAt: now };
+    return {
+      id, parent: id.includes('02') ? 'ANTI-02' : 'ANTI-01', assignment: task.id,
+      role: id.includes('QA') ? 'INDEPENDENT_QA_RUNNER' : 'SUBAGENT',
+      runtime: working ? 'RUNNING_VERIFIED' : (evidenceClass === 'VERIFIED' ? 'TEAMWORK_ACTIVE' : 'UNKNOWN'),
+      teamwork: working || evidenceClass === 'VERIFIED' ? 'TEAMWORK_ACTIVE' : 'UNKNOWN',
+      evidenceClass, state, source: 'DEV_ONLY_SYNTHETIC_FIXTURE', lastObservedAt: now, tasks: freshness === null ? [] : [task],
+      ownership: [{ task: task.id, scope: 'DEV_ONLY', state }],
+    };
+  });
+  return { ...model, subagents: [...(model.subagents || []).filter((agent) => !String(agent.id).startsWith('DEMO-')), ...subagents] };
+}
+
+function runtimeVerified(agent) {
+  return agent?.evidenceClass === 'VERIFIED' && ['TEAMWORK_ACTIVE', 'RUNNING_VERIFIED'].includes(agent?.runtime);
+}
+
 function makeDesk(scene, x, z, color, agentId, workstation) {
   const group = new THREE.Group(); group.position.set(x, 0, z); group.userData.agentId = agentId; group.userData.workstation = workstation;
   const wood = makeMaterial(0x253b55); const leg = makeMaterial(0x516b84); const screen = makeMaterial(0x183952, { emissive: color, emissiveIntensity: 0.12, roughness: 0.4 });
@@ -123,10 +158,8 @@ function buildOffice(scene, model, records) {
     const agent = model.agents.find((entry) => entry.id === item.agent);
     const desk = makeDesk(scene, item.x, item.z, item.agent === 'CODEX' ? palette.violet : (item.agent === 'ANTI-01' ? palette.cyan : palette.blue), item.agent, item.station);
     const visualRole = agent || { id: item.agent };
-    const verifiedRuntime = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED';
-    const verifiedWork = verifiedRuntime && agent?.tasks?.some((task) => task.state === 'IN_PROGRESS'
-      && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
-    const avatar = createChibiAgent(visualRole, agentRingState(agent), avatarPool, { runtimeVerified: verifiedRuntime, workingVerified: verifiedWork });
+    const verifiedSession = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED';
+    const avatar = createChibiAgent(visualRole, agentRingState(agent), avatarPool, { runtimeVerified: runtimeVerified(agent) || verifiedSession, agent });
     // Without a verified active session, keep the avatar at a neutral observation marker beside the desk.
     const active = agent?.teamwork === 'TEAMWORK_ACTIVE' && agent?.evidenceClass === 'VERIFIED';
     avatar.position.set(item.x + (active ? 0 : -1.55), 0, item.z + 2.0);
@@ -154,10 +187,7 @@ function buildOffice(scene, model, records) {
     const offsetKey = parentId || 'UNKNOWN_PARENT';
     const index = subagentOffsets.get(offsetKey) || 0; subagentOffsets.set(offsetKey, index + 1);
     const x = parent.x + (index % 2 === 0 ? 1.6 : -1.6); const z = parent.z - 2.2 - Math.floor(index / 2) * 1.4;
-    const verifiedRuntime = subagent.runtime === 'VERIFIED' && subagent.evidenceClass === 'VERIFIED';
-    const verifiedWork = verifiedRuntime && subagent.tasks?.some((task) => task.state === 'IN_PROGRESS'
-      && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
-    const avatar = createChibiAgent({ id: subagent.id, role: subagent.role || 'SUBAGENT' }, agentRingState(subagent), avatarPool, { runtimeVerified: verifiedRuntime, workingVerified: verifiedWork });
+    const avatar = createChibiAgent({ id: subagent.id, role: subagent.role || 'SUBAGENT' }, agentRingState(subagent), avatarPool, { runtimeVerified: runtimeVerified(subagent), agent: subagent });
     avatar.position.set(x, 0, z); avatar.userData.detail = { kind: 'agent', id: subagent.id };
     scene.add(avatar); records.agents.set(subagent.id, { avatar, desk: null, active: false, agent: subagent });
     interactive.push(avatar);
@@ -201,7 +231,7 @@ function agentWorldMarkup(model) {
       <div id="aw-fleet-pane" class="aw-list-pane" hidden></div>
       <div id="aw-timeline-pane" class="aw-list-pane" hidden><div class="aw-filters"><label>Agent <select id="aw-agent-filter"><option value="all">All</option><option>CODEX</option><option>ANTI-01</option><option>ANTI-02</option></select></label><label>Type <select id="aw-type-filter"><option value="all">All recorded events</option></select></label><label>Wave <select id="aw-wave-filter"><option value="all">All recorded waves</option></select></label><label>Since <input type="datetime-local" id="aw-time-filter"></label><span>Historical records are labeled REPLAY; no events are invented.</span></div><div id="aw-timeline-list"></div></div>
       <div class="aw-camera" aria-label="Camera presets">${Object.entries(PRESETS).map(([key, value]) => `<button type="button" data-camera="${key}" title="${value.label}">${escapeText(value.label)}</button>`).join('')}<button type="button" data-camera="overview">Reset</button></div>
-    </div><aside class="aw-inspector" aria-live="polite"><div class="aw-inspector-head"><div class="aw-eyebrow">LIVE CONTROLLER OBSERVATION</div><h2 id="aw-selected-title">Agent overview</h2><span id="aw-evidence-class" class="aw-evidence">UNKNOWN</span></div><nav class="aw-agent-shortcuts" aria-label="Select agent">${(model?.agents || []).map((agent) => `<button type="button" data-aw-select-agent="${escapeText(agent.id)}">${escapeText(agent.id)}</button>`).join('')}</nav><pre id="aw-detail">${escapeText(detailText(null, null))}</pre><div class="aw-summary" id="aw-summary"></div><div class="aw-legend"><b>State legend</b><span><i class="dot assigned"></i> Assigned</span><span><i class="dot active"></i> Controller says in progress</span><span><i class="dot blocked"></i> Frozen / blocked</span><span><i class="dot unknown"></i> Runtime unknown</span></div><p class="aw-disclaimer">MCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.</p></aside></div>
+    </div><aside class="aw-inspector" aria-live="polite"><div class="aw-inspector-head"><div class="aw-eyebrow">LIVE CONTROLLER OBSERVATION</div><h2 id="aw-selected-title">Agent overview</h2><span id="aw-evidence-class" class="aw-evidence">UNKNOWN</span></div><nav class="aw-agent-shortcuts" aria-label="Select agent">${(model?.agents || []).map((agent) => `<button type="button" data-aw-select-agent="${escapeText(agent.id)}">${escapeText(agent.id)}</button>`).join('')}</nav><pre id="aw-detail">${escapeText(detailText(null, null))}</pre><div class="aw-summary" id="aw-summary"></div><div class="aw-legend"><b>State legend</b><span><i class="dot assigned"></i> Assigned</span><span><i class="dot active"></i> Controller says in progress</span><span><i class="dot blocked"></i> Frozen / blocked</span><span><i class="dot unknown"></i> Runtime unknown</span><small>Animation chỉ hiển thị khi RUNNING_VERIFIED</small></div><p class="aw-disclaimer">MCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.</p></aside></div>
   </section>`;
 }
 function escapeText(value) { return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
@@ -210,7 +240,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
   const root = host?.querySelector('#agent-world-root');
   if (!root) return { update() {}, dispose() {} };
   const canvas = root.querySelector('#aw-canvas');
-  const model = initialModel || normalizeAgentWorld({ cockpit: null });
+  const model = withDevChibiStates(initialModel || normalizeAgentWorld({ cockpit: null }));
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   const list = [];
   let disposed = false; let frameTime = 0; let dirty = true; let selected = null; let currentModel = model;
@@ -259,7 +289,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
       installResizeObserver();
       animationLoop = (time) => {
         if (disposed || document.hidden || view !== 'world' || root.offsetParent === null) return;
-        if (time - frameTime < 20) return;
+        if (time - frameTime < 16) return;
         frameTime = time; dirty = false;
         if (cameraTween) stepCameraTween(time);
         for (const record of agentObjects.values()) updateChibiAgent(record.avatar, time / 1000, reducedMotion);
@@ -323,6 +353,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
 
   function syncModel(next) {
     if (!next || typeof next !== 'object') return;
+    next = withDevChibiStates(next);
     currentModel = next;
     if (statusNode) statusNode.textContent = next.available ? `Source ${next.source} · ${next.observedAt}` : `Controller observation unavailable · ${next.error || 'UNKNOWN'}`;
     const agent = next.agents.find((entry) => entry.id === selected?.id);
@@ -353,12 +384,24 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
     }
     for (const [id, record] of taskLines) if (!wanted.has(id)) { scene.remove(record.line); record.line.geometry.dispose(); record.line.material.dispose(); taskLines.delete(id); }
     for (const [id, record] of agentObjects) {
-      const agent = next.agents.find((item) => item.id === id);
-      if (agent && id !== 'CODEX' && id !== 'ANTI-01' && id !== 'ANTI-02') continue;
+      const agent = [...next.agents, ...(next.subagents || [])].find((item) => item.id === id);
+      if (agent && !record.desk) {
+        const blocked = agentRingState(agent) === 'BLOCKED';
+        const active = runtimeVerified(agent);
+        const verifiedWork = isVerifiedWorking(agent);
+        record.avatar.userData.runtimeState = blocked ? 'BLOCKED' : (verifiedWork ? 'WORKING' : (active ? 'IDLE' : 'UNKNOWN'));
+        record.avatar.userData.marker.visible = record.avatar.userData.runtimeState === 'UNKNOWN';
+        record.avatar.userData.exclamation.visible = blocked;
+        record.avatar.userData.gear.visible = verifiedWork;
+        record.avatar.userData.keyboard.visible = verifiedWork;
+        record.avatar.userData.visualState = agentRingState(agent);
+        const color = chibiRingColor(record.avatar.userData.visualState);
+        record.avatar.userData.ring.material.color.setHex(color);
+        record.avatar.userData.ring.material.emissive.setHex(color);
+      }
       if (agent && record.desk) {
         const active = agent.teamwork === 'TEAMWORK_ACTIVE' && agent.evidenceClass === 'VERIFIED';
-        const verifiedWork = active && agent.tasks.some((task) => task.state === 'IN_PROGRESS'
-          && task.freshness === 'FRESH' && String(task.evidence || '').includes('CONTROLLER'));
+        const verifiedWork = isVerifiedWorking(agent);
         record.avatar.userData.runtimeState = ['FROZEN', 'BLOCKED'].some((state) => agent.tasks.some((task) => task.state === state))
           ? 'BLOCKED' : (verifiedWork ? 'WORKING' : (active ? 'IDLE' : 'UNKNOWN'));
         record.avatar.userData.marker.visible = record.avatar.userData.runtimeState === 'UNKNOWN';
@@ -493,7 +536,7 @@ export function mountAgentWorld({ host, initialModel, initialMissionFilter = 'al
   function filteredTasks(next) { return next.tasks.filter((task) => missionFilter === 'all' || task.mission === missionFilter || task.wave === missionFilter); }
   function select(detail) {
     selected = detail;
-    if (detail.kind === 'agent') renderInspector(currentModel.agents.find((item) => item.id === detail.id), null, null);
+    if (detail.kind === 'agent') renderInspector([...currentModel.agents, ...(currentModel.subagents || [])].find((item) => item.id === detail.id), null, null);
     else if (detail.kind === 'task') renderInspector(null, currentModel.tasks.find((item) => item.id === detail.id), null);
     else if (detail.kind === 'zone') renderInspector(null, null, detail);
     dirty = true;

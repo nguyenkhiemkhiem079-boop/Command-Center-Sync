@@ -65,6 +65,17 @@ function ringColor(state) {
   return COLORS.unknown;
 }
 
+// The current controller projection has no direct RUNNING_VERIFIED field.
+// Accept only that exact runtime value together with fresh, controller-sourced
+// in-progress evidence; Registry task state alone is never enough to animate work.
+export function isVerifiedWorking(agent) {
+  if (!agent || agent.runtime !== 'RUNNING_VERIFIED' || agent.evidenceClass !== 'VERIFIED' || !Array.isArray(agent.tasks)) return false;
+  return agent.tasks.some((task) => task && task.state === 'IN_PROGRESS'
+    && task.freshness === 'FRESH'
+    && typeof task.evidence === 'string'
+    && task.evidence.toUpperCase().includes('CONTROLLER'));
+}
+
 function addChefHat(pool, group) {
   const { THREE: T } = pool;
   const white = material(pool, 'chef-white', COLORS.chef);
@@ -99,7 +110,7 @@ function addQaGoggles(pool, group) {
   mesh(pool, group, geometry(pool, 'qa-goggle-bridge', () => new T.BoxGeometry(0.12, 0.035, 0.035)), frame, [0, 1.52, 0.52]);
 }
 
-export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAssetPool(), { runtimeVerified = false, workingVerified = false } = {}) {
+export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAssetPool(), { runtimeVerified = false, agent = null } = {}) {
   const { THREE: T } = pool;
   const kind = roleKind(role);
   const id = typeof role === 'string' ? role : String(role?.id || kind);
@@ -187,7 +198,7 @@ export function createChibiAgent(role, state = 'UNKNOWN', pool = createChibiAsse
     object.add(outline);
   });
   const blocked = ['FROZEN', 'BLOCKED'].includes(String(state || '').toUpperCase());
-  const runtimeState = blocked ? 'BLOCKED' : (workingVerified && runtimeVerified ? 'WORKING' : (!runtimeVerified ? 'UNKNOWN' : 'IDLE'));
+  const runtimeState = blocked ? 'BLOCKED' : (isVerifiedWorking(agent) ? 'WORKING' : (!runtimeVerified ? 'UNKNOWN' : 'IDLE'));
   marker.visible = runtimeState === 'UNKNOWN';
   exclamation.visible = runtimeState === 'BLOCKED';
   gear.visible = runtimeState === 'WORKING';
@@ -222,6 +233,7 @@ export function updateChibiAgent(group, timeSeconds, reducedMotion = false) {
   const frozen = data.runtimeState === 'BLOCKED';
   const unknown = data.runtimeState === 'UNKNOWN';
   if (frozen || unknown || reducedMotion) {
+    data.motionState = frozen ? 'BLOCKED' : 'IDLE';
     data.head.rotation.z = unknown ? -0.075 : 0;
     data.torso.scale.y = 0.39;
     for (const eye of data.eyes) eye.scale.y = 1.08;

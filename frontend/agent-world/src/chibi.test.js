@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createChibiAgent, createChibiAssetPool, CHIBI_COLORS, setChibiHovered, triggerChibiJump, updateChibiAgent } from './chibi.js';
+import { createChibiAgent, createChibiAssetPool, CHIBI_COLORS, isVerifiedWorking, setChibiHovered, triggerChibiJump, updateChibiAgent } from './chibi.js';
 
 function meshes(root) {
   const result = [];
@@ -72,32 +72,95 @@ test('unknown runtime stays neutral and never performs verified work animation',
   assert.equal(avatar.userData.keyboard.visible, false);
 });
 
-test('verified in-progress work animates while MCP-only and reported claims remain idle', () => {
+const verifiedRunning = (overrides = {}) => ({
+  runtime: 'RUNNING_VERIFIED', evidenceClass: 'VERIFIED',
+  tasks: [{ state: 'IN_PROGRESS', freshness: 'FRESH', evidence: 'CONTROLLER_RUNTIME_EVENT' }],
+  ...overrides,
+});
+
+test('work animation gate accepts only RUNNING_VERIFIED with fresh controller evidence', () => {
+  const invalid = [
+    ['ASSIGNED', { runtime: 'ASSIGNED' }],
+    ['LAUNCH_REQUESTED', { runtime: 'LAUNCH_REQUESTED' }],
+    ['UNKNOWN', { runtime: 'UNKNOWN' }],
+    ['NOT_VERIFIED', { runtime: 'TEAMWORK_ACTIVE', evidenceClass: 'AGENT_REPORTED' }],
+    ['FROZEN', { tasks: [{ state: 'FROZEN', freshness: 'FRESH', evidence: 'CONTROLLER_RUNTIME_EVENT' }] }],
+    ['BLOCKED', { tasks: [{ state: 'BLOCKED', freshness: 'FRESH', evidence: 'CONTROLLER_RUNTIME_EVENT' }] }],
+    ['missing runtime', { runtime: undefined }],
+    ['missing evidence class', { evidenceClass: undefined }],
+    ['missing task fields', { tasks: [{}] }],
+    ['missing task collection', { tasks: undefined }],
+    ['stale observation', { tasks: [{ state: 'IN_PROGRESS', freshness: 'STALE', evidence: 'CONTROLLER_RUNTIME_EVENT' }] }],
+    ['unknown freshness', { tasks: [{ state: 'IN_PROGRESS', freshness: 'UNKNOWN', evidence: 'CONTROLLER_RUNTIME_EVENT' }] }],
+    ['registry-only in progress', { tasks: [{ state: 'IN_PROGRESS', freshness: 'FRESH', evidence: 'REGISTRY_RECORD' }] }],
+  ];
+  for (const [label, patch] of invalid) assert.equal(isVerifiedWorking(verifiedRunning(patch)), false, label);
+  assert.equal(isVerifiedWorking(verifiedRunning()), true);
+});
+
+test('assignment, launch, unknown and unverified states remain idle; unknown uses question mark', () => {
   const pool = createChibiAssetPool();
-  const mcpOnly = createChibiAgent('ANTI-01', 'ASSIGNED', pool, { runtimeVerified: false, workingVerified: true });
-  const reported = createChibiAgent('ANTI-02', 'ASSIGNED', pool, { runtimeVerified: true, workingVerified: false });
-  const working = createChibiAgent('ANTI-01', 'IN_PROGRESS', pool, { runtimeVerified: true, workingVerified: true });
-  updateChibiAgent(mcpOnly, 3); updateChibiAgent(reported, 3); updateChibiAgent(working, 3);
-  assert.equal(mcpOnly.userData.motionState, 'IDLE');
-  assert.equal(reported.userData.motionState, 'IDLE');
+  const cases = [
+    ['ASSIGNED', { runtime: 'UNKNOWN', evidenceClass: 'UNKNOWN' }, false],
+    ['LAUNCH_REQUESTED', { runtime: 'TEAMWORK_ACTIVE', evidenceClass: 'VERIFIED' }, true],
+    ['UNKNOWN', { runtime: 'UNKNOWN', evidenceClass: 'UNKNOWN' }, false],
+    ['NOT_VERIFIED', { runtime: 'TEAMWORK_ACTIVE', evidenceClass: 'AGENT_REPORTED' }, false],
+    ['STALE', verifiedRunning({ tasks: [{ state: 'IN_PROGRESS', freshness: 'STALE', evidence: 'CONTROLLER_RUNTIME_EVENT' }] }), true],
+  ];
+  for (const [state, agent, runtimeVerified] of cases) {
+    const avatar = createChibiAgent('ANTI-01', state, pool, { runtimeVerified, agent: { ...agent, tasks: agent.tasks || [{ state, freshness: 'FRESH', evidence: 'CONTROLLER_RUNTIME_EVENT' }] } });
+    updateChibiAgent(avatar, 3);
+    assert.equal(avatar.userData.motionState, 'IDLE', state);
+    assert.equal(avatar.userData.keyboard.visible, false, state);
+    assert.equal(avatar.userData.gear.visible, false, state);
+    if (state === 'UNKNOWN' || state === 'ASSIGNED' || state === 'NOT_VERIFIED') assert.equal(avatar.userData.marker.visible, true, state);
+  }
+});
+
+test('only fresh RUNNING_VERIFIED controller evidence animates; stale evidence stays idle', () => {
+  const pool = createChibiAssetPool();
+  const stale = createChibiAgent('ANTI-02', 'IN_PROGRESS', pool, { runtimeVerified: true, agent: verifiedRunning({ tasks: [{ state: 'IN_PROGRESS', freshness: 'STALE', evidence: 'CONTROLLER_RUNTIME_EVENT' }] }) });
+  const working = createChibiAgent('ANTI-01', 'IN_PROGRESS', pool, { runtimeVerified: true, agent: verifiedRunning() });
+  updateChibiAgent(stale, 3); updateChibiAgent(working, 3);
+  assert.equal(stale.userData.motionState, 'IDLE');
+  assert.equal(stale.userData.keyboard.visible, false);
   assert.equal(working.userData.motionState, 'WORKING_VERIFIED');
+  assert.equal(working.userData.keyboard.visible, true);
   assert.notEqual(working.userData.gear.rotation.z, 0);
   assert.ok(working.userData.arms.some((arm) => arm.rotation.x !== 0));
 });
 
-test('frozen avatars remain rigid with a warning and cannot be animated or selected as active work', () => {
-  const avatar = createChibiAgent('ANTI-02', 'FROZEN', createChibiAssetPool(), { runtimeVerified: true, workingVerified: true });
-  updateChibiAgent(avatar, 5);
-  assert.equal(avatar.userData.runtimeState, 'BLOCKED');
-  assert.equal(avatar.userData.exclamation.visible, true);
-  assert.equal(avatar.userData.keyboard.visible, false);
-  assert.equal(avatar.userData.motionState, 'IDLE');
+test('frozen and blocked avatars remain rigid with a warning and cannot be animated', () => {
+  for (const state of ['FROZEN', 'BLOCKED']) {
+    const avatar = createChibiAgent('ANTI-02', state, createChibiAssetPool(), { runtimeVerified: true, agent: verifiedRunning() });
+    updateChibiAgent(avatar, 5);
+    assert.equal(avatar.userData.runtimeState, 'BLOCKED');
+    assert.equal(avatar.userData.exclamation.visible, true);
+    assert.equal(avatar.userData.marker.visible, false);
+    assert.equal(avatar.userData.keyboard.visible, false);
+    assert.equal(avatar.userData.motionState, 'BLOCKED');
+    assert.equal(avatar.userData.arms.every((arm) => arm.rotation.x === 0), true);
+    assert.equal(triggerChibiJump(avatar, 5), false);
+  }
+});
+
+test('a verified worker that becomes frozen stops its work indicators immediately', () => {
+  const avatar = createChibiAgent('ANTI-01', 'IN_PROGRESS', createChibiAssetPool(), { runtimeVerified: true, agent: verifiedRunning() });
+  updateChibiAgent(avatar, 9);
+  assert.equal(avatar.userData.motionState, 'WORKING_VERIFIED');
+  avatar.userData.runtimeState = 'BLOCKED';
+  avatar.userData.exclamation.visible = true;
+  avatar.userData.keyboard.visible = false;
+  avatar.userData.gear.visible = false;
+  updateChibiAgent(avatar, 9.1);
+  assert.equal(avatar.userData.motionState, 'BLOCKED');
+  assert.equal(avatar.userData.gear.rotation.z, 0);
   assert.equal(avatar.userData.arms.every((arm) => arm.rotation.x === 0), true);
-  assert.equal(triggerChibiJump(avatar, 5), false);
+  assert.equal(avatar.userData.exclamation.visible, true);
 });
 
 test('reduced motion disables work animation while preserving accessible hover and known-state click feedback', () => {
-  const avatar = createChibiAgent('CODEX', 'ASSIGNED', createChibiAssetPool(), { runtimeVerified: true, workingVerified: true });
+  const avatar = createChibiAgent('CODEX', 'ASSIGNED', createChibiAssetPool(), { runtimeVerified: true, agent: verifiedRunning() });
   updateChibiAgent(avatar, 6, true);
   assert.equal(avatar.userData.motionState, 'IDLE');
   assert.equal(avatar.userData.gear.rotation.z, 0);
