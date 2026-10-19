@@ -8,6 +8,8 @@ Commit được rà soát ban đầu: `7a87fccbd474d2663cc66f390abc1b80f80e4aa0`
 
 Dashboard production: `http://127.0.0.1:8876/ui`
 
+Các commit đã push lên nhánh phát triển: `58b4c79` (sửa lifecycle + QA evidence) và `75df7c6` (chỉnh report). Commit kiểm thử source cuối: `75df7c6360b96c43dc437c95259bcc5a15f795d3`.
+
 ## Kết quả chính
 
 Đã sửa lỗi gộp `CODE_REVIEWED` và `PASS_CODE_REVIEW` thành `ACCEPTED`. Agent World hiện tách review pass, integration pending/in progress, approval pending, accepted và integrated; assignment chỉ được hiển thị `ACCEPTED` khi đúng trạng thái controller. Snapshot quá 5 phút hoặc lệch tương lai trên 1 phút không còn được trình bày như trạng thái mới. Task/lock `FROZEN` vẫn hiện là blocked để không làm mất dấu ownership hold.
@@ -31,7 +33,7 @@ Mapping đã kiểm tra gồm `QUEUED`, `TASK_ASSIGNED`, `ACKNOWLEDGED`, `DEVELO
 
 ## Hosted CI và policy migration
 
-PR #4 vẫn mở, chưa merge. Check mới nhất trước commit sửa này là run `39184826232`, job `117844923574`, trên head `7a87fcc`; job kết thúc exit 2 sau 3 giây. [GitHub Actions job](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39184826232/job/117844923574?pr=4).
+PR #4 vẫn mở, chưa merge. Check trên implementation head mới nhất đã push `75df7c6360b96c43dc437c95259bcc5a15f795d3` là run `39186551433`, job `117850080787`; GitHub API ghi nhận workflow/job failed và step `Verify approved assignment and real paths` thất bại. Log đầy đủ cần đăng nhập GitHub để xem; mã lỗi `OWNER_APPROVED_BASE_POLICY_REQUIRED` được ghi trong lần kiểm tra trước và tái xác nhận từ policy/base source hiện hành. [GitHub Actions run](https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39186551433).
 
 Base policy hiện có `approval_state=PENDING_OWNER_APPROVAL`, chỉ assignment `CI-PILOT` với phạm vi `ci-pilot/`; workflow trusted-base đang gọi cố định assignment đó. Do đó `OWNER_APPROVED_BASE_POLICY_REQUIRED` là kết quả fail-closed dự kiến. Sau khi sửa approval state, PR #4 vẫn không được bao phủ bởi CI-PILOT; thêm nữa PR có `server.py` và `tests/` đang được policy đánh dấu protected. Không đổi policy, workflow, protection hoặc assignment trong source candidate.
 
@@ -75,4 +77,17 @@ Screenshot staging: [agent-world-chrome-hardware-gpu.png](AGENT_WORLD_SCREENSHOT
 | Real Antigravity/Teamwork observations | UNKNOWN / NOT_EXECUTED; Agent World giữ read-only |
 | New production deployment, merge or release | NOT_EXECUTED; yêu cầu owner approval vẫn áp dụng |
 
-Artifact hashes, source diff, CI run and current pushed commit will be appended after the validated development commit is pushed. Không có thay đổi nào lên production trong đợt QA này.
+Source diff chính: `frontend/agent-world/src/state.js`, `state.test.js`, `main.js`, bundle `web/agent-world/agent-world.js`, browser harness `tests/browser_agent_world.mjs` và `tests/run_agent_world_browser_staging.py`; phần còn lại là hợp đồng trạng thái, checklist, báo cáo, log regression và screenshot.
+
+SHA-256 artifact:
+
+| Artifact | SHA-256 |
+|---|---|
+| Production bundle hiện đang cài | `15dede23ade895d9958a0d66724e2681639dedc7a71a44ffd11ecd4a5b19f3e4` |
+| Candidate bundle đã build | `2f59c19b0c61cbd346c77461e4e008e33ba8fb92bdae6c70e357751eb402d5df` |
+| Screenshot RTX 3050 staging | `f3d5a556a80381e0afccbe5f50f762658418ea44ffd635e7298868717641fd1f` |
+| JSON đo GPU/context | `e7f07dc2053ad7f229b77b8d9613d5828934c364c9f636e7331bfde530ce8309` |
+| Python regression log 235 tests | `ac74d0cc99f3d714e591a6efc9e719fc7ecb05a241404184470b2f3366b585f6` |
+| Scope migration proposal | `b0a39b57f9e20e992a4ae67d1e23b88f39ab64e9997ba34535ae670e39eb1980` |
+
+Không có thay đổi nào lên production trong đợt QA này.
