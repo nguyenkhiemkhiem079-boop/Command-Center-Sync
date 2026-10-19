@@ -66,6 +66,17 @@ class TestDashboardV07(unittest.TestCase):
         self.assertEqual(status,200)
         self.assertIn(b'.switch-guide',css)
 
+    def test_remote_control_is_human_handoff_only(self):
+        status,js=self.call('/ui/dashboard.js')
+        self.assertEqual(status,200)
+        source=js.decode('utf-8')
+        for expected in ('https://antigravity.google/','Mở Antigravity Remote Control',
+                         'target="_blank" rel="noopener noreferrer"',
+                         'Trạng thái Remote Control trong K-TOOL: UNKNOWN',
+                         'K-TOOL không có API được hỗ trợ'):
+            self.assertIn(expected,source)
+        self.assertNotIn('/ui/api/remote-control',source)
+
     def test_manual_switch_freeze_keeps_lock_and_resume_remains_blocked(self):
         self.db.create_task('CODEX','SWITCH1','Switch handoff','module/switch','bounded task',self.sha)
         self.db.assign('CODEX','SWITCH1','ANTI-01')
