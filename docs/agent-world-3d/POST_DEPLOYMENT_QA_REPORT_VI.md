@@ -72,6 +72,7 @@ Screenshot staging: [agent-world-chrome-hardware-gpu.png](AGENT_WORLD_SCREENSHOT
 | Production service/API reachability | PASS (health/UI 200; protected APIs 401 unauthenticated) |
 | Live authenticated UI interaction and screenshots | BLOCKED — không tìm thấy phiên browser có Dashboard; công cụ UI timeout |
 | Physical hardware WebGL on current machine | PASS trên RTX 3050 staging |
+| GPU frame-rate target | PARTIAL — 25 draw batches/s so với giới hạn scene 30 fps |
 | Long-session/VRAM/RTX 3060 Ti performance | NOT_EXECUTED |
 | Hosted scope policy / PR #4 required check | BLOCKED — owner-approved trusted-base migration còn thiếu |
 | Real Antigravity/Teamwork observations | UNKNOWN / NOT_EXECUTED; Agent World giữ read-only |

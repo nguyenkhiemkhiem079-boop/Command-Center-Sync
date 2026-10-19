@@ -29,5 +29,6 @@ See [POST_DEPLOYMENT_QA_REPORT_VI.md](POST_DEPLOYMENT_QA_REPORT_VI.md) for the 2
 | Trusted-base policy migration | BLOCKED pending independent owner review | `SCOPE_POLICY_MIGRATION_REVIEW.md` |
 | Live authenticated Dashboard interaction | BLOCKED | `/ui` 200, data APIs 401 without active session; browser UI helper timed out; no session was altered |
 | GPU WebGL and context recovery | PASS on RTX 3050 staging | 3-minute hardware-rendered Chrome soak; renderer and memory details in post-deployment report |
+| GPU frame-rate target | PARTIAL | 25 measured draw batches/s with a 30 fps scene cap |
 | RTX 3060 Ti target performance | NOT_EXECUTED | Machine reports NVIDIA RTX 3050 4 GB |
 | Production deploy / merge | NOT_EXECUTED | Requires fresh owner approval; no live change made |
