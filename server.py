@@ -148,8 +148,11 @@ def handler_factory(store: Registry, hashes: dict):
             if path in ('/','/ui','/ui/'):
                 return self.asset('index.html','text/html; charset=utf-8')
             if path=='/ui/dashboard.css':return self.asset('dashboard.css','text/css; charset=utf-8')
+            if path=='/ui/agent-world.css':return self.asset('agent-world.css','text/css; charset=utf-8')
             if path=='/ui/dashboard.js':return self.asset('dashboard.js','application/javascript; charset=utf-8')
             if path=='/ui/cockpit.js':return self.asset('cockpit.js','application/javascript; charset=utf-8')
+            if path=='/ui/agent-world/agent-world.js':return self.asset('agent-world/agent-world.js','text/javascript; charset=utf-8')
+            if path=='/ui/agent-world/three-LICENSE.txt':return self.asset('agent-world/three-LICENSE.txt','text/plain; charset=utf-8')
             if path=='/ui/api/report':
                 sess=self._session()
                 if not sess:return self.respond(401,{'error':'LOGIN_REQUIRED'})

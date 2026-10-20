@@ -1,0 +1,13 @@
+{
+  "pull_request": 4,
+  "head_sha": "5d555059e6f70b346264acdf5d55b5312de43084",
+  "check_name": "Trusted base scope policy",
+  "check_run_id": 117755042235,
+  "workflow_run_id": 39154581560,
+  "status": "completed",
+  "conclusion": "failure",
+  "details_url": "https://github.com/nguyenkhiemkhiem079-boop/Command-Center-Sync/actions/runs/39154497058/job/117754783773",
+  "verified_failure": "OWNER_APPROVED_BASE_POLICY_REQUIRED",
+  "workflow_evidence": "Trusted-base checkout was 127607f05f98a53ad7447dfa2f24721554ed6361; workflow required .github/scope-policy.json from that trusted base, test -f failed, and the scope verifier returned pass=false with quarantine=true.",
+  "interpretation": "Fail-closed policy prerequisite; this does not report an Agent World path-scope violation. No policy file was added or protections weakened."
+}

@@ -33,7 +33,7 @@ def snapshot(control_or_snapshot,actor='CODEX'):
     def meta(row=None):return {'source':origin,'last_verified_at':verified,'execution_verified_at':None}
     nodes=[];edges=[];assignments=[]
     def node(row,kind,parent=None):
-        item={'id':label(row.get('id')),'kind':kind,'state':label(row.get('status',row.get('state'))),'owner':label(row.get('owner')),**meta()}
+        item={'id':label(row.get('id')),'kind':kind,'state':label(row.get('status',row.get('state'))),'owner':label(row.get('owner')),'parent':label(parent) if parent else None,**meta()}
         nodes.append(item)
         if parent:edges.append({'from':label(parent),'to':item['id'],'kind':'OWNERSHIP',**meta()})
     for r in raw.get('missions',[]):node(r,'MISSION')

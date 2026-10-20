@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 import unittest
 from tests import test_dashboard as dashboard_base
+from registry import Denied
 
 
 class TestDashboardV07(unittest.TestCase):
@@ -49,3 +50,45 @@ class TestDashboardV07(unittest.TestCase):
         self.assertIn(b'Quota:',js)
         self.assertIn(b'NOT_VERIFIED',js)
         self.assertIn(b'OWNER_APPROVAL_REQUIRED',js)
+
+    def test_manual_account_switch_guide_does_not_handle_credentials_or_claim_runtime(self):
+        status,js=self.call('/ui/dashboard.js')
+        self.assertEqual(status,200)
+        source=js.decode('utf-8')
+        for expected in ('data-act="account-switch"','ANTI-01','ANTI-02',
+                         'C:\\\\KTOOL\\\\Workspaces\\\\${escapeHtml(selected)}',
+                         'đăng xuất/đăng nhập chính thức','actor: ${escapeHtml(selected)}',
+                         'Resume task FROZEN','NOT_VERIFIED'):
+            self.assertIn(expected,source)
+        self.assertNotIn('/ui/api/account-switch',source)
+        self.assertNotIn('oauth_token',source.lower())
+        status,css=self.call('/ui/dashboard.css')
+        self.assertEqual(status,200)
+        self.assertIn(b'.switch-guide',css)
+
+    def test_remote_control_is_human_handoff_only(self):
+        status,js=self.call('/ui/dashboard.js')
+        self.assertEqual(status,200)
+        source=js.decode('utf-8')
+        for expected in ('https://antigravity.google/','Mở Antigravity Remote Control',
+                         'target="_blank" rel="noopener noreferrer"',
+                         'Trạng thái Remote Control trong K-TOOL: UNKNOWN',
+                         'K-TOOL không có API được hỗ trợ'):
+            self.assertIn(expected,source)
+        self.assertNotIn('/ui/api/remote-control',source)
+
+    def test_manual_switch_freeze_keeps_lock_and_resume_remains_blocked(self):
+        self.db.create_task('CODEX','SWITCH1','Switch handoff','module/switch','bounded task',self.sha)
+        self.db.assign('CODEX','SWITCH1','ANTI-01')
+        self.login()
+        status,data=self.call('/ui/api/freeze',{'tid':'SWITCH1','reason':'Manual account switch handoff'})
+        self.assertEqual(status,200)
+        self.assertFalse(data['result']['lock_released'])
+        snapshot=self.db.dashboard_snapshot('CODEX')
+        task=next(t for t in snapshot['tasks'] if t['id']=='SWITCH1')
+        lock=next(l for l in snapshot['locks'] if l['task_id']=='SWITCH1')
+        self.assertEqual(task['state'],'FROZEN')
+        self.assertEqual(lock['state'],'FROZEN')
+        self.assertEqual(self.db.resume_frozen_task.__name__,'resume_frozen_task')
+        with self.assertRaises(Denied):
+            self.db.resume_frozen_task('CODEX','SWITCH1','ANTI-01',True,True)

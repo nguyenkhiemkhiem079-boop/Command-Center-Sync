@@ -1,0 +1,98 @@
+{
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "browserVersion": "Chrome/155.0.8059.41",
+  "chromiumProtocol": "1.3",
+  "navigation": "http://127.0.0.1:52844/ui",
+  "viewport": {
+    "width": 1600,
+    "height": 1100
+  },
+  "result": {
+    "title": "K-TOOL | AI Command Center",
+    "nav": "navitem selected",
+    "root": true,
+    "fallback": null,
+    "fallbackVisible": false,
+    "worldLabel": "AGENT WORLD\nController data · CONTROLLER_METADATA_PROJECTION · 2026-10-19T03:01:02.094195+00:00\nMission \nAll recorded missions\n3D World\n2D Fleet\nEvent Timeline\nVERIFIED activity only · runtime defaults UNKNOWN\nAGENT WORLD · LIVE REGISTRY PROJECTION\nSource CONTROLLER_METADATA_PROJECTION · 2026-10-19T03:01:02.094195+00:00\nIsometric overview\nTop view\nCodex station\nANTI-01 station\nANTI-02 station\nIndependent QA lab\nReset\nLIVE CONTROLLER OBSERVATION\nAgent overview\nUNKNOWN\nCODEX\nANTI-01\nANTI-02\nSelect an agent, workstation, task path or office zone to inspect controller-recorded metadata.\n0 verified Teamwork session(s) · 0 registry task(s) · 0 approval request(s)\nState legend\nAssigned\nController says in progress\nFrozen / blocked\nRuntime unknown\n\nMCP connection, assignment and self-QA records do not prove an Antigravity session or active coding. This scene is read-only.",
+    "canvas": true,
+    "webgl2": true,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002584) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "externalScripts": [],
+    "contentSecurityPolicy": null
+  },
+  "interactions": {
+    "fleetVisible": true,
+    "selected": "CODEX",
+    "timelineVisible": true,
+    "keyboardSelection": "ANTI-01",
+    "worldSelected": "true",
+    "anti01Camera": "ANTI-01 station"
+  },
+  "manualAccountSwitchGuide": {
+    "status": "PASS",
+    "selectedRole": "ANTI-02",
+    "providerSession": "UNKNOWN"
+  },
+  "cameraScreenshots": [
+    {
+      "preset": "overview",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-overview.png"
+    },
+    {
+      "preset": "top",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-top.png"
+    },
+    {
+      "preset": "codex",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-codex.png"
+    },
+    {
+      "preset": "anti01",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-anti01.png"
+    },
+    {
+      "preset": "anti02",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-anti02.png"
+    },
+    {
+      "preset": "qa",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-qa.png"
+    },
+    {
+      "preset": "reset",
+      "path": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu-camera-reset.png"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "runtimeErrors": [],
+  "externalRequests": [],
+  "gpuMeasurement": {
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002584) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "elapsedMs": 60006,
+    "animationFrames": 990,
+    "animationFrameRate": 16.5,
+    "renderedFrames": 438,
+    "renderedFps": 7.3,
+    "heapStartBytes": 10032465,
+    "heapEndBytes": 7364276,
+    "heapPeakSampledBytes": 13478046,
+    "heapSamples": 60,
+    "fpsMethod": "renderer.render submissions counted by Agent World during the visible-tab soak; browser animation-frame rate reported separately"
+  },
+  "contextRecovery": {
+    "status": "PASS",
+    "lost": true,
+    "restored": true,
+    "fallbackShown": true,
+    "canvasVisible": true
+  },
+  "screenshot": "C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-hardware-gpu.png",
+  "expectedMode": "WEBGL2_SCENE",
+  "status": "PASS",
+  "note": "Disposable staging Registry and credential. Interactive GPU result applies only to the detected local adapter; browser GPU memory is not exposed by this harness."
+}

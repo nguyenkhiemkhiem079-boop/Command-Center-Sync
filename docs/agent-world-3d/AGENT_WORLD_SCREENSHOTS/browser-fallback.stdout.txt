@@ -1,0 +1,1 @@
+{"status":"PASS","browserVersion":"Chrome/155.0.8059.41","webgl2":false,"renderer":"HIDDEN","errors":2,"externalRequests":0,"screenshot":"C:\\Users\\khiem.nguyen\\Documents\\Codex\\2026-10-18\\codex-k-tool-ai-command-center\\source\\docs\\agent-world-3d\\AGENT_WORLD_SCREENSHOTS\\agent-world-chrome-no-webgl.png"}
